@@ -4,7 +4,7 @@
  */
 {
 	"$schema": "node_modules/wrangler/config-schema.json",
-	"name": "proj-h",
+	"name": "holy-mountain-afc4",
 	"main": ".open-next/worker.js",
 	"compatibility_date": "2025-03-01",
 	"compatibility_flags": [
@@ -21,8 +21,8 @@
 	"d1_databases": [
 		{
 			"binding": "DB",
-			"database_name": "english-learning-db",
-			"database_id": "english-learning-db"
+			"database_name": "english-learn",
+			"database_id": "4c9fed20-18b9-446e-b13a-55ba0b1735a9"
 		}
 	],
 	"vars": {
@@ -33,7 +33,6 @@
 	 * https://developers.cloudflare.com/workers/static-assets/binding/
 	 */
 	// "assets": { "directory": "./public/", "binding": "ASSETS" },
-
 	/**
 	 * Service Bindings (communicate between multiple Workers)
 	 * https://developers.cloudflare.com/workers/wrangler/configuration/#service-bindings
