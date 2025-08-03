@@ -9,10 +9,16 @@
 		"lint": "next lint",
 		"deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
 		"preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
-		"cf-typegen": "wrangler types --env-interface CloudflareEnv ./cloudflare-env.d.ts"
+		"cf-typegen": "wrangler types --env-interface CloudflareEnv ./cloudflare-env.d.ts",
+		"init-db": "node init-db.js",
+		"db-reset": "wrangler d1 execute english-learning-db --file=./schema.sql --local"
 	},
 	"dependencies": {
 		"@opennextjs/cloudflare": "^1.6.3",
+		"@types/bcryptjs": "^2.4.6",
+		"@types/jsonwebtoken": "^9.0.10",
+		"bcryptjs": "^3.0.2",
+		"jsonwebtoken": "^9.0.2",
 		"next": "15.3.5",
 		"react": "^19.0.0",
 		"react-dom": "^19.0.0"
