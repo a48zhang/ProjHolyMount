@@ -1,6 +1,10 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import "antd/dist/reset.css";
+import zhCN from 'antd/locale/zh_CN';
+import { ConfigProvider, App as AntdApp } from 'antd';
 import "./globals.css";
+import AppNav from '@/components/app-nav';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -24,10 +28,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="zh-CN" suppressHydrationWarning>
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
-        {children}
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+        <ConfigProvider locale={zhCN} theme={{ token: { colorPrimary: '#1677ff' } }}>
+          <AntdApp>
+            <AppNav />
+            {children}
+          </AntdApp>
+        </ConfigProvider>
       </body>
     </html>
   );

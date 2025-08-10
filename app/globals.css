@@ -3,11 +3,28 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  --primary: #2563eb;
+  /* blue-600 */
+  --primary-foreground: #ffffff;
+  --muted: #6b7280;
+  /* gray-500 */
+  --card-bg: #ffffff;
+  --card-border: #e5e7eb;
+  /* gray-200 */
 }
 
 .dark {
   --background: #0a0a0a;
   --foreground: #ededed;
+  --primary: #60a5fa;
+  /* blue-400 */
+  --primary-foreground: #0b1220;
+  --muted: #9ca3af;
+  /* gray-400 */
+  --card-bg: #111827;
+  /* gray-900 */
+  --card-border: #1f2937;
+  /* gray-800 */
 }
 
 @theme inline {
@@ -21,4 +38,138 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Base typography */
+h1 {
+  @apply text-2xl font-semibold;
+}
+
+h2 {
+  @apply text-xl font-semibold;
+}
+
+h3 {
+  @apply text-lg font-semibold;
+}
+
+p {
+  @apply leading-7;
+}
+
+a {
+  @apply text-blue-600 hover:underline;
+}
+
+/* Page container */
+.container-page {
+  @apply min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white;
+}
+
+.container-inner {
+  @apply max-w-5xl mx-auto p-6;
+}
+
+/* Card */
+.card {
+  @apply bg-white dark:bg-gray-800 rounded-lg shadow border border-solid;
+  border-color: var(--card-border);
+}
+
+.card-body {
+  @apply p-5;
+}
+
+.card-title {
+  @apply text-lg font-semibold mb-2;
+}
+
+/* Buttons */
+.btn {
+  @apply inline-flex items-center justify-center rounded transition-colors select-none text-sm font-medium px-3 py-1.5;
+}
+
+.btn-primary {
+  background: var(--primary);
+  color: var(--primary-foreground);
+}
+
+.btn-primary:hover {
+  filter: brightness(0.95);
+}
+
+.btn-ghost {
+  @apply bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200;
+}
+
+.btn-ghost:hover {
+  @apply bg-gray-300 dark:bg-gray-600;
+}
+
+/* Chips / badges */
+.chip {
+  @apply px-2 py-0.5 text-xs rounded;
+}
+
+.chip-info {
+  @apply bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300;
+}
+
+.chip-warn {
+  @apply bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300;
+}
+
+.chip-muted {
+  @apply bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-300;
+}
+
+/* Muted text */
+.muted {
+  color: var(--muted);
+}
+
+/* Inputs */
+.input {
+  @apply border rounded px-3 py-2 bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 w-full;
+}
+
+/* Nav */
+.nav-shell {
+  @apply sticky top-0 z-40 border-b border-gray-200 dark:border-gray-800 bg-white/70 dark:bg-gray-900/70 backdrop-blur;
+}
+
+.nav-inner {
+  @apply max-w-5xl mx-auto px-6 flex items-center justify-between py-3;
+}
+
+.nav-brand {
+  @apply font-semibold tracking-tight text-gray-900 dark:text-white;
+}
+
+.nav-links {
+  @apply hidden md:flex items-center gap-1 text-sm;
+}
+
+.nav-link {
+  @apply px-3 py-1.5 rounded transition-colors text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700;
+}
+
+.nav-link-active {
+  @apply bg-blue-600 text-white hover:bg-blue-600;
+}
+
+.nav-right {
+  @apply flex items-center gap-3;
+}
+
+.nav-mobile-btn {
+  @apply md:hidden inline-flex items-center justify-center p-2 rounded bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200;
+}
+
+.nav-mobile-panel {
+  @apply md:hidden border-t border-gray-200 dark:border-gray-800 bg-white/90 dark:bg-gray-900/90 backdrop-blur;
+}
+
+.nav-mobile-list {
+  @apply max-w-5xl mx-auto px-6 py-3 flex flex-col gap-2;
 }

@@ -89,7 +89,7 @@ export async function POST(request: NextRequest) {
       SELECT username, email FROM users 
       WHERE LOWER(username) = ? OR LOWER(email) = ?
     `;
-    
+
     const existingUser = await env.DB
       .prepare(checkQuery)
       .bind(cleanUsername, cleanEmail)
@@ -137,9 +137,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // 初始化角色与档案（默认 student/free）
+    await env.DB.prepare('INSERT OR IGNORE INTO user_roles (user_id, role) VALUES (?, \"student\")').bind(newUser.id).run();
+    await env.DB.prepare('INSERT OR IGNORE INTO user_profile (user_id, plan, grade_level) VALUES (?, \"free\", NULL)').bind(newUser.id).run();
+
     return NextResponse.json(
-      { 
-        success: true, 
+      {
+        success: true,
         message: '注册成功',
         data: newUser
       },

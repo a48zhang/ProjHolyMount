@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCloudflareContext } from '@opennextjs/cloudflare';
 import jwt from 'jsonwebtoken';
+import { getAuthContext } from '@/lib/auth';
 
 export async function GET(request: NextRequest) {
   try {
     const { env } = await getCloudflareContext();
-    
+
     // 获取token
     const authHeader = request.headers.get('Authorization');
     const token = authHeader?.replace('Bearer ', '');
@@ -46,12 +47,19 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    return NextResponse.json(
-      {
-        success: true,
-        data: user
+    // 读取简化权限信息（角色与权益）
+    // 这里复用统一上下文，避免重复查询与分散实现
+    const ctx = await getAuthContext(request);
+
+    return NextResponse.json({
+      success: true,
+      data: {
+        ...user,
+        role: ctx.role,
+        plan: ctx.plan,
+        grade_level: ctx.grade_level,
       }
-    );
+    });
 
   } catch (error) {
     if (error instanceof jwt.JsonWebTokenError) {
