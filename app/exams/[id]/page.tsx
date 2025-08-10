@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import Link from 'next/link';
+import { Button, Space } from 'antd';
 
 export default function PublicExamDetailPage() {
     const { id } = useParams<{ id: string }>();
@@ -21,8 +21,8 @@ export default function PublicExamDetailPage() {
             .finally(() => setLoading(false));
     }, [examId, router]);
 
-    if (loading) return <div className="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white p-6">加载中...</div>;
-    if (error) return <div className="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white p-6 text-red-600">{error}</div>;
+    if (loading) return <div className="container-page"><div className="container-inner">加载中...</div></div>;
+    if (error) return <div className="container-page"><div className="container-inner text-red-600">{error}</div></div>;
     if (!data) return null;
 
     return (
@@ -33,10 +33,10 @@ export default function PublicExamDetailPage() {
                     <div className="text-sm muted mb-2">{data.description || '无描述'}</div>
                     <div className="text-sm muted">总分 {data.total_points} · {data.duration_minutes ? `${data.duration_minutes} 分钟` : '不限时'} · 题目数 {data.question_count}</div>
                 </div></div>
-                <div className="flex items-center gap-2">
-                    <Link href="/" className="btn btn-ghost">返回</Link>
-                    <Link href={`/exams?list=public`} className="btn btn-ghost">公开列表</Link>
-                </div>
+                <Space>
+                    <Button onClick={() => router.push('/')}>返回</Button>
+                    <Button onClick={() => router.push('/exams?list=public')}>公开列表</Button>
+                </Space>
             </div>
         </div>
     );

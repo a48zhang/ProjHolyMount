@@ -3,9 +3,10 @@
 import { useEffect, useState } from 'react';
 import { Table, Tag, Space, Button, Select, message } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
-import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 export default function TeacherQuestionsPage() {
+    const router = useRouter();
     const [rows, setRows] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [type, setType] = useState<string | undefined>(undefined);
@@ -37,13 +38,24 @@ export default function TeacherQuestionsPage() {
 
     const columns: ColumnsType<any> = [
         { title: 'ID', dataIndex: 'id', width: 80 },
-        { title: '类型', dataIndex: 'type', width: 160, render: (v) => <Tag>{v}</Tag> },
+        {
+            title: '类型', dataIndex: 'type', width: 160, render: (v) => {
+                const map: Record<string, string> = {
+                    single_choice: '单选题',
+                    multiple_choice: '多选题',
+                    fill_blank: '填空题',
+                    short_answer: '简答题',
+                    essay: '论述题',
+                };
+                return <Tag>{map[v] || v}</Tag>;
+            }
+        },
         { title: '内容预览', dataIndex: 'content_json', render: (v) => <span className="text-gray-500 text-xs">{(v?.stem || v?.text || v?.prompt || '').slice(0, 50)}</span> },
-        { title: '状态', dataIndex: 'is_active', width: 100, render: (v) => v ? <Tag color="green">active</Tag> : <Tag>inactive</Tag> },
+        { title: '状态', dataIndex: 'is_active', width: 100, render: (v) => v ? <Tag color="green">启用</Tag> : <Tag>停用</Tag> },
         {
             title: '操作', width: 200, render: (_, r) => (
                 <Space>
-                    <Link href={`/teacher/questions/${r.id}/edit`}><Button>编辑</Button></Link>
+                    <Button onClick={() => router.push(`/teacher/questions/${r.id}/edit`)}>编辑</Button>
                     <Button danger onClick={() => del(r.id)}>删除</Button>
                 </Space>
             )
@@ -55,14 +67,18 @@ export default function TeacherQuestionsPage() {
             <div className="container-inner max-w-5xl">
                 <div className="flex items-center justify-between mb-4">
                     <h1>题库</h1>
-                    <Link href="/teacher/questions/new"><Button type="primary">新建题目</Button></Link>
+                    <Button type="primary" onClick={() => router.push('/teacher/questions/new')}>新建题目</Button>
                 </div>
                 <div className="card"><div className="card-body">
                     <div className="mb-4">
                         <Select allowClear placeholder="按题型过滤" style={{ width: 240 }} value={type} onChange={setType as any}
                             options={[
-                                'single_choice', 'multiple_choice', 'fill_blank', 'short_answer', 'essay'
-                            ].map(v => ({ value: v, label: v }))}
+                                { value: 'single_choice', label: '单选题' },
+                                { value: 'multiple_choice', label: '多选题' },
+                                { value: 'fill_blank', label: '填空题' },
+                                { value: 'short_answer', label: '简答题' },
+                                { value: 'essay', label: '论述题' },
+                            ]}
                         />
                     </div>
                     <Table rowKey="id" columns={columns} dataSource={rows} loading={loading} pagination={{ pageSize: 10 }} />

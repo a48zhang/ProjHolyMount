@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "antd/dist/reset.css";
-import zhCN from 'antd/locale/zh_CN';
-import { ConfigProvider, App as AntdApp } from 'antd';
 import "./globals.css";
 import AppNav from '@/components/app-nav';
+import { ThemeProvider } from '@/components/theme-provider';
+import Script from 'next/script';
+import { Suspense } from 'react';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -29,12 +30,15 @@ export default function RootLayout({
   return (
     <html lang="zh-CN" suppressHydrationWarning>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        <ConfigProvider locale={zhCN} theme={{ token: { colorPrimary: '#1677ff' } }}>
-          <AntdApp>
+        <Script id="theme-init" strategy="beforeInteractive">
+          {`(function(){try{var t=localStorage.getItem('theme');var d=t?t==='dark':window.matchMedia('(prefers-color-scheme: dark)').matches;document.documentElement.classList.toggle('dark', !!d);}catch(e){}})();`}
+        </Script>
+        <ThemeProvider>
+          <Suspense fallback={null}>
             <AppNav />
-            {children}
-          </AntdApp>
-        </ConfigProvider>
+          </Suspense>
+          {children}
+        </ThemeProvider>
       </body>
     </html>
   );

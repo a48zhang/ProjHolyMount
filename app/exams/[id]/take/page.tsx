@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { message } from 'antd';
 import { useParams, useRouter } from 'next/navigation';
 
 type PaperItem = {
@@ -83,7 +84,7 @@ export default function TakeExamPage() {
         const res = await fetch(`/api/submissions/${submissionId}/submit`, { method: 'POST', headers: { Authorization: `Bearer ${token}` } });
         const json: any = await res.json();
         if (json.success) { router.push(`/results/${submissionId}`); }
-        else { alert(json.error || '提交失败'); }
+        else { message.error(json.error || '提交失败'); }
     };
 
     if (loading) return <div className="p-6">加载中...</div>;
@@ -162,7 +163,7 @@ function QuestionEditor({ item, value, onChange }: { item: PaperItem; value: any
                 <div>{q.content?.text}</div>
                 <div className="space-y-1">
                     {Array.from({ length: blanks }).map((_, i) => (
-                        <input key={i} className="border rounded px-2 py-1 w-full" value={cur[i] || ''} onChange={(e) => setIdx(i, e.target.value)} placeholder={`填空 ${i + 1}`} />
+                        <input key={i} className="input" value={cur[i] || ''} onChange={(e) => setIdx(i, e.target.value)} placeholder={`填空 ${i + 1}`} />
                     ))}
                 </div>
             </div>
@@ -172,7 +173,7 @@ function QuestionEditor({ item, value, onChange }: { item: PaperItem; value: any
         return (
             <div className="space-y-2">
                 <div>{q.content?.prompt}</div>
-                <textarea className="border rounded px-2 py-1 w-full min-h-28" value={value || ''} onChange={(e) => onChange(e.target.value)} placeholder="请输入答案" />
+                <textarea className="input min-h-28" value={value || ''} onChange={(e) => onChange(e.target.value)} placeholder="请输入答案" />
             </div>
         );
     }

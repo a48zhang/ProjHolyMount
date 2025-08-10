@@ -2,23 +2,28 @@
 
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { ThemeToggle } from '@/components/theme-toggle';
+import { Layout, Menu, Button, Drawer, Grid, Space, Typography } from 'antd';
+import type { MenuProps } from 'antd';
+import { MenuOutlined, ReadOutlined, ProfileOutlined, BookOutlined, LogoutOutlined } from '@ant-design/icons';
 
 type Role = 'student' | 'teacher' | 'admin';
 
 export default function AppNav() {
     const pathname = usePathname();
+    const searchParams = useSearchParams();
     const router = useRouter();
     const [role, setRole] = useState<Role | null>(null);
-    const [search, setSearch] = useState('');
+    const [mobileOpen, setMobileOpen] = useState(false);
+    const screens = Grid.useBreakpoint();
 
     useEffect(() => {
         const token = localStorage.getItem('token');
         if (!token) return;
         fetch('/api/auth/me', { headers: { Authorization: `Bearer ${token}` } })
             .then(r => r.json() as Promise<any>)
-            .then(res => { if (res.success) setRole(res.data.role as Role); })
+            .then(res => { if (res?.success) setRole(res.data.role as Role); })
             .catch(() => { });
     }, []);
 
@@ -27,65 +32,143 @@ export default function AppNav() {
         router.push('/');
     };
 
-    useEffect(() => {
-        if (typeof window !== 'undefined') setSearch(window.location.search);
-    }, [pathname]);
+    const isPublicExams = useMemo(() => {
+        if (!pathname) return false;
+        const list = searchParams?.get('list');
+        return pathname.startsWith('/exams') && list === 'public';
+    }, [pathname, searchParams]);
 
-    const isActive = (href: string) => pathname === href;
-    const isPublicExams = pathname?.startsWith('/exams') && search.includes('list=public');
+    const selectedKey = useMemo(() => {
+        if (!pathname) return '';
+        if (pathname.startsWith('/teacher/questions')) return 'teacher:questions';
+        if (pathname.startsWith('/teacher/exams')) return 'teacher:exams';
+        if (pathname === '/exams' || pathname.startsWith('/exams')) return isPublicExams ? 'exams:public' : 'exams:mine';
+        return '';
+    }, [pathname, isPublicExams]);
 
-    const [open, setOpen] = useState(false);
+    const items: MenuProps['items'] = useMemo(() => {
+        const base: MenuProps['items'] = [
+            {
+                key: 'exams:mine',
+                icon: <ReadOutlined />,
+                label: (
+                    <Link href="/exams" className="no-underline">
+                        我的考试
+                    </Link>
+                ),
+            },
+            {
+                key: 'exams:public',
+                icon: <ProfileOutlined />,
+                label: (
+                    <Link href="/exams?list=public" className="no-underline">
+                        公开考试
+                    </Link>
+                ),
+            },
+        ];
+
+        if (role === 'teacher' || role === 'admin') {
+            base.push(
+                {
+                    key: 'teacher:exams',
+                    icon: <ProfileOutlined />,
+                    label: (
+                        <Link href="/teacher/exams" className="no-underline">
+                            试卷
+                        </Link>
+                    ),
+                },
+                {
+                    key: 'teacher:questions',
+                    icon: <BookOutlined />,
+                    label: (
+                        <Link href="/teacher/questions" className="no-underline">
+                            题库
+                        </Link>
+                    ),
+                },
+            );
+        }
+
+        return base;
+    }, [role]);
+
+    const roleLabel: Record<Role, string> = { student: '学生', teacher: '老师', admin: '管理员' };
     return (
-        <header className="nav-shell">
-            <div className="nav-inner">
-                <div className="flex items-center gap-3">
-                    <Link href="/dashboard" className="nav-brand">英语学习平台</Link>
-                    <button className="nav-mobile-btn" onClick={() => setOpen(o => !o)}>
-                        <span className="sr-only">菜单</span>☰
-                    </button>
-                    <nav className="nav-links">
-                        <NavLink href="/exams" active={pathname === '/exams' && !isPublicExams}>我的考试</NavLink>
-                        <NavLink href="/exams?list=public" active={isPublicExams}>公开考试</NavLink>
-                        {(role === 'teacher' || role === 'admin') && (
-                            <>
-                                <NavLink href="/teacher/exams" active={pathname?.startsWith('/teacher/exams')}>试卷</NavLink>
-                                <NavLink href="/teacher/questions" active={pathname?.startsWith('/teacher/questions')}>题库</NavLink>
-                            </>
-                        )}
-                    </nav>
+        <Layout.Header
+            style={{
+                position: 'sticky',
+                top: 0,
+                zIndex: 100,
+                paddingInline: 16,
+                borderBottom: '1px solid var(--card-border)',
+                background: 'var(--background)'
+            }}
+        >
+            <div
+                style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    maxWidth: 896,
+                    margin: '0 auto',
+                    width: '100%',
+                    gap: 12,
+                    height: '100%'
+                }}
+            >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    {!screens.md && (
+                        <Button
+                            type="text"
+                            icon={<MenuOutlined />}
+                            aria-label="打开菜单"
+                            onClick={() => setMobileOpen(true)}
+                        />
+                    )}
+                    <Link href="/dashboard" className="no-underline" style={{ fontWeight: 600, color: 'var(--foreground)' }}>
+                        英语学习平台
+                    </Link>
+                    {screens.md && (
+                        <Menu
+                            mode="horizontal"
+                            selectedKeys={selectedKey ? [selectedKey] : []}
+                            items={items}
+                            style={{ borderBottom: 'none', minWidth: 0 }}
+                        />
+                    )}
                 </div>
-                <div className="nav-right">
-                    <span className="hidden md:inline text-sm text-gray-600 dark:text-gray-400">{role ? `角色：${role}` : ''}</span>
+                <Space align="center" size={12}>
+                    {role ? (
+                        <Typography.Text type="secondary" className="hidden md:inline">
+                            角色：{roleLabel[role]}
+                        </Typography.Text>
+                    ) : null}
                     <ThemeToggle />
-                    <button className="btn btn-ghost" onClick={logout}>退出</button>
-                </div>
+                    <Button type="text" onClick={logout} icon={<LogoutOutlined />}>退出</Button>
+                </Space>
             </div>
-            {open && (
-                <div className="nav-mobile-panel">
-                    <div className="nav-mobile-list">
-                        <NavLink href="/exams" active={pathname === '/exams' && !isPublicExams}>我的考试</NavLink>
-                        <NavLink href="/exams?list=public" active={isPublicExams}>公开考试</NavLink>
-                        {(role === 'teacher' || role === 'admin') && (
-                            <>
-                                <NavLink href="/teacher/exams" active={pathname?.startsWith('/teacher/exams')}>试卷</NavLink>
-                                <NavLink href="/teacher/questions" active={pathname?.startsWith('/teacher/questions')}>题库</NavLink>
-                            </>
-                        )}
-                        <button className="btn btn-ghost" onClick={logout}>退出</button>
-                    </div>
-                    <div className="fixed inset-0 -z-10" onClick={() => setOpen(false)} />
+
+            <Drawer
+                title="导航"
+                placement="left"
+                closable
+                open={mobileOpen}
+                onClose={() => setMobileOpen(false)}
+                bodyStyle={{ padding: 0 }}
+            >
+                <Menu
+                    mode="inline"
+                    selectedKeys={selectedKey ? [selectedKey] : []}
+                    items={items}
+                    onClick={() => setMobileOpen(false)}
+                    style={{ borderInlineEnd: 'none' }}
+                />
+                <div style={{ padding: 12 }}>
+                    <Button block onClick={logout} icon={<LogoutOutlined />}>退出</Button>
                 </div>
-            )}
-        </header>
+            </Drawer>
+        </Layout.Header>
     );
 }
-
-function NavLink({ href, active, children }: { href: string; active?: boolean; children: React.ReactNode }) {
-    return (
-        <Link href={href} className={`nav-link ${active ? 'nav-link-active' : ''}`}>
-            {children}
-        </Link>
-    );
-}
-
-

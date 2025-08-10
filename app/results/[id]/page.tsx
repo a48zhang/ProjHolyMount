@@ -27,8 +27,8 @@ export default function ResultPage() {
             .finally(() => setLoading(false));
     }, [router, submissionId]);
 
-    if (loading) return <div className="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white p-6">加载中...</div>;
-    if (error) return <div className="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white p-6 text-red-600">{error}</div>;
+    if (loading) return <div className="container-page"><div className="container-inner">加载中...</div></div>;
+    if (error) return <div className="container-page"><div className="container-inner text-red-600">{error}</div></div>;
     if (!data) return null;
 
     const sub = data.submission;
@@ -43,7 +43,9 @@ export default function ResultPage() {
                         <div>总分：{sub.score_total}（自动：{sub.score_auto}，人工：{sub.score_manual}）</div>
                         <div className="mt-2">
                             状态：
-                            <span className={`chip ml-1 ${sub.status === 'graded' ? 'chip-info' : sub.status === 'submitted' ? 'chip-info' : 'chip-muted'}`}>{sub.status}</span>
+                            <span className={`chip ml-1 ${sub.status === 'graded' ? 'chip-info' : sub.status === 'submitted' ? 'chip-info' : 'chip-muted'}`}>
+                                {sub.status === 'graded' ? '已评分' : sub.status === 'submitted' ? '已提交' : '进行中'}
+                            </span>
                         </div>
                     </div>
                 </div>

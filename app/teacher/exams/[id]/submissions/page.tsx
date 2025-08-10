@@ -28,12 +28,17 @@ export default function ExamSubmissionsPage() {
     const columns: ColumnsType<any> = [
         { title: 'ID', dataIndex: 'id', width: 80 },
         { title: '学生ID', dataIndex: 'user_id', width: 120 },
-        { title: '状态', dataIndex: 'status', width: 120, render: (v) => <Tag color={v === 'graded' ? 'green' : v === 'submitted' ? 'blue' : 'default'}>{v}</Tag> },
+        {
+            title: '状态', dataIndex: 'status', width: 120, render: (v) => {
+                const map: Record<string, string> = { in_progress: '进行中', submitted: '已提交', graded: '已评分' };
+                return <Tag color={v === 'graded' ? 'green' : v === 'submitted' ? 'blue' : 'default'}>{map[v] || v}</Tag>;
+            }
+        },
         { title: '自动分', dataIndex: 'score_auto', width: 120 },
         { title: '人工分', dataIndex: 'score_manual', width: 120 },
         { title: '总分', dataIndex: 'score_total', width: 120 },
         { title: '提交时间', dataIndex: 'submitted_at', width: 200, render: (v) => v || '-' },
-        { title: '操作', width: 140, render: (_, r) => <Link href={`/teacher/grade/${r.id}`}><Button type="primary">评分</Button></Link> }
+        { title: '操作', width: 140, render: (_, r) => <Button type="primary" onClick={() => router.push(`/teacher/grade/${r.id}`)}>评分</Button> }
     ];
 
     return (

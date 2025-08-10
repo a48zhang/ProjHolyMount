@@ -36,9 +36,9 @@ export async function GET(request: NextRequest) {
 
     // 获取用户信息
     const user = await env.DB
-      .prepare('SELECT id, username, email, display_name, level, points, created_at FROM users WHERE id = ?')
+      .prepare('SELECT id, username, email, display_name, avatar_url, level, points, created_at FROM users WHERE id = ?')
       .bind(decoded.userId)
-      .first<{ id: number; username: string; email: string; display_name: string; level: number; points: number; created_at: string }>();
+      .first<{ id: number; username: string; email: string; display_name: string; avatar_url: string | null; level: number; points: number; created_at: string }>();
 
     if (!user) {
       return NextResponse.json(
