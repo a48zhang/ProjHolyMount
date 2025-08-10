@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useEffect, useMemo, useState, useCallback, useRef } from 'react';
-import { Button, Input, Radio, Checkbox, Space, Divider, InputNumber } from 'antd';
+import { Button, Input, Radio, Checkbox, Space, Divider, InputNumber, Upload } from 'antd';
+import type { UploadProps } from 'antd';
 
 type QuestionType = 'single_choice' | 'multiple_choice' | 'fill_blank' | 'short_answer' | 'essay';
 
@@ -27,6 +28,7 @@ function QuestionEditor({
     const [blankCount, setBlankCount] = useState<number>(1);
     const [blankKeys, setBlankKeys] = useState<string[]>(() => ['']);
     const [prompt, setPrompt] = useState<string>('');
+    const [images, setImages] = useState<string[]>([]);
 
     const syncingRef = useRef(false);
     const prevTypeRef = useRef<QuestionType | null>(null);
@@ -78,9 +80,9 @@ function QuestionEditor({
             return;
         }
         if (type === 'single_choice') {
-            onChange({ content: { stem, options }, answerKey: singleKey });
+            onChange({ content: { stem, options, images }, answerKey: singleKey });
         } else if (type === 'multiple_choice') {
-            onChange({ content: { stem, options }, answerKey: multiKey });
+            onChange({ content: { stem, options, images }, answerKey: multiKey });
         } else if (type === 'fill_blank') {
             const normalizedKeys = blankKeys.slice(0, blankCount).map((k) => {
                 const parts = String(k ?? '')
@@ -89,11 +91,28 @@ function QuestionEditor({
                     .filter(Boolean);
                 return parts.length <= 1 ? (parts[0] ?? '') : parts;
             });
-            onChange({ content: { text, blanks: Array.from({ length: blankCount }) }, answerKey: normalizedKeys });
+            onChange({ content: { text, images, blanks: Array.from({ length: blankCount }) }, answerKey: normalizedKeys });
         } else if (type === 'short_answer' || type === 'essay') {
-            onChange({ content: { prompt } });
+            onChange({ content: { prompt, images } });
         }
-    }, [type, stem, options, singleKey, multiKey, text, blankCount, blankKeys, prompt, onChange]);
+    }, [type, stem, options, singleKey, multiKey, text, blankCount, blankKeys, prompt, onChange, images]);
+    const uploadProps: UploadProps = {
+        multiple: true,
+        accept: 'image/*',
+        beforeUpload: (file) => {
+            const reader = new FileReader();
+            reader.onload = () => {
+                const url = String(reader.result || '');
+                setImages(prev => [...prev, url]);
+            };
+            reader.readAsDataURL(file);
+            return false;
+        },
+        onRemove: (file) => {
+            const url = (file.thumbUrl || file.url) as string;
+            setImages(prev => prev.filter(u => u !== url));
+        }
+    };
 
     const addOption = useCallback(() => setOptions(prev => [...prev, '']), []);
     const removeOption = useCallback((idx: number) => setOptions(prev => prev.filter((_, i) => i !== idx)), []);
@@ -114,6 +133,9 @@ function QuestionEditor({
                     <div className="mb-1">题干</div>
                     <Input.TextArea value={stem} onChange={e => setStem(e.target.value)} autoSize={{ minRows: 2 }} placeholder="请输入题干" />
                 </div>
+                <Upload {...uploadProps} listType="picture" maxCount={8}>
+                    <Button>添加图片</Button>
+                </Upload>
                 <Divider orientation="left">选项</Divider>
                 <Radio.Group value={singleKey} onChange={e => setSingleKey(e.target.value)}>
                     <Space direction="vertical" style={{ width: '100%' }}>
@@ -140,6 +162,9 @@ function QuestionEditor({
                     <div className="mb-1">题干</div>
                     <Input.TextArea value={stem} onChange={e => setStem(e.target.value)} autoSize={{ minRows: 2 }} placeholder="请输入题干" />
                 </div>
+                <Upload {...uploadProps} listType="picture" maxCount={8}>
+                    <Button>添加图片</Button>
+                </Upload>
                 <Divider orientation="left">选项（勾选为正确答案）</Divider>
                 <Space direction="vertical" style={{ width: '100%' }}>
                     {options.map((op, i) => (
@@ -164,6 +189,9 @@ function QuestionEditor({
                     <div className="mb-1">题目文本</div>
                     <Input.TextArea value={text} onChange={e => setText(e.target.value)} autoSize={{ minRows: 2 }} placeholder="请输入题目文本" />
                 </div>
+                <Upload {...uploadProps} listType="picture" maxCount={8}>
+                    <Button>添加图片</Button>
+                </Upload>
                 <div>
                     <div className="mb-1">空格数量</div>
                     <InputNumber min={1} max={20} value={blankCount} onChange={v => setBlankCount(Number(v) || 1)} />
@@ -185,6 +213,9 @@ function QuestionEditor({
                     <div className="mb-1">提示</div>
                     <Input.TextArea value={prompt} onChange={e => setPrompt(e.target.value)} autoSize={{ minRows: 2 }} placeholder="请输入作答提示" />
                 </div>
+                <Upload {...uploadProps} listType="picture" maxCount={8}>
+                    <Button>添加图片</Button>
+                </Upload>
             </div>
         );
     }

@@ -17,6 +17,7 @@ export default function PublishExamPage() {
     const [searching, setSearching] = useState(false);
     const [options, setOptions] = useState<{ label: string; value: number }[]>([]);
     const [selected, setSelected] = useState<number[]>([]);
+    const [revokeIds, setRevokeIds] = useState<number[]>([]);
     const [dueAt, setDueAt] = useState<dayjs.Dayjs | null>(null);
 
     const token = useMemo(() => (typeof window !== 'undefined' ? localStorage.getItem('token') || '' : ''), []);
@@ -125,7 +126,24 @@ export default function PublishExamPage() {
 
                 <div className="card"><div className="card-body">
                     <h2 className="card-title">已分配列表</h2>
-                    <Table rowKey="id" columns={columns} dataSource={assignments} loading={loading} pagination={{ pageSize: 10 }} />
+                    <Space className="mb-2">
+                        <Button onClick={() => loadAssignments()}>刷新</Button>
+                        <Button danger disabled={!revokeIds.length} onClick={async () => {
+                            if (!token) return message.error('未登录');
+                            const res = await fetchJson<any>(`/api/exams/${examId}/assignments`, { method: 'DELETE', headers: authHeaders(token), body: JSON.stringify({ ids: revokeIds }) });
+                            if (res.success) { message.success('已撤销'); setRevokeIds([]); loadAssignments(); } else { message.error(res.error || '撤销失败'); }
+                        }}>撤销选中</Button>
+                        <Button onClick={() => {
+                            const csv = ['id,user_id,assigned_at,due_at', ...(assignments || []).map((a: any) => `${a.id},${a.user_id},${a.assigned_at || ''},${a.due_at || ''}`)].join('\n');
+                            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+                            const url = URL.createObjectURL(blob);
+                            const a = document.createElement('a'); a.href = url; a.download = `assignments-${examId}.csv`; a.click(); URL.revokeObjectURL(url);
+                        }}>导出CSV</Button>
+                        <Button onClick={() => location.href = `/teacher/exams/${examId}/edit`}>返回编辑</Button>
+                    </Space>
+                    <Table rowKey="id" columns={columns} dataSource={assignments} loading={loading} pagination={{ pageSize: 10 }}
+                        rowSelection={{ selectedRowKeys: revokeIds, onChange: (keys) => setRevokeIds(keys as number[]) }}
+                    />
                 </div></div>
             </div>
         </div>

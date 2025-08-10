@@ -78,7 +78,10 @@ export default function GradeSubmissionPage() {
                             );
                         })}
                         <Input.TextArea rows={3} placeholder="评语（可选）" value={feedback} onChange={e => setFeedback(e.target.value)} />
-                        <Button type="primary" onClick={submit}>提交评分</Button>
+                        <Space>
+                            <Button onClick={() => router.back()}>返回提交列表</Button>
+                            <Button type="primary" onClick={submit}>提交评分</Button>
+                        </Space>
                     </Space>
                 </div></div>
             </div>

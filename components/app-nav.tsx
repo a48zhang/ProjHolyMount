@@ -122,7 +122,6 @@ export default function AppNav() {
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
-                    maxWidth: 896,
                     margin: '0 auto',
                     width: '100%',
                     gap: 12,

@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'next/navigation';
-import { Card, Form, Input, InputNumber, Switch, Button, message, Table, Space, Modal } from 'antd';
+import { Card, Form, Input, InputNumber, Switch, Button, message, Table, Space, Drawer, Input as AntInput, Select } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { fetchJson, authHeaders } from '@/lib/http';
 
@@ -12,9 +12,9 @@ export default function EditExamPage() {
     const [form] = Form.useForm();
     const [loading, setLoading] = useState(true);
     const [rows, setRows] = useState<any[]>([]);
-    const [questionModalOpen, setQuestionModalOpen] = useState(false);
-    const [questionList, setQuestionList] = useState<any[]>([]);
-    const [selectedQuestionIds, setSelectedQuestionIds] = useState<number[]>([]);
+    const [pickerOpen, setPickerOpen] = useState(false);
+    const [selectedIds, setSelectedIds] = useState<number[]>([]);
+    const [pointsMap, setPointsMap] = useState<Record<number, number>>({});
 
     useEffect(() => {
         const token = localStorage.getItem('token');
@@ -33,7 +33,13 @@ export default function EditExamPage() {
                     required_grade_level: exam.data.required_grade_level,
                 });
             }
-            if (eqs.success) setRows(eqs.data.items || []);
+            if (eqs.success) {
+                const list = eqs.data.items || [];
+                setRows(list);
+                const pm: Record<number, number> = {};
+                list.forEach((it: any) => { pm[it.question_id] = it.points || 0; });
+                setPointsMap(pm);
+            }
         }).finally(() => setLoading(false));
     }, [examId, form]);
 
@@ -60,19 +66,10 @@ export default function EditExamPage() {
         { title: '题目ID', dataIndex: 'question_id', width: 120 },
         { title: '类型', dataIndex: ['question', 'type'], width: 160 },
         {
-            title: '分值', dataIndex: 'points', width: 120, render: (v, r, idx) => (
-                <InputNumber min={0} value={r.points} onChange={(val) => setRows(list => list.map((it, i) => i === idx ? { ...it, points: Number(val || 0) } : it))} />
+            title: '分值', dataIndex: 'points', width: 140, render: (v, r) => (
+                <InputNumber min={0} value={pointsMap[r.question_id] ?? v} onChange={(val) => setPointsMap(m => ({ ...m, [r.question_id]: Number(val || 0) }))} />
             )
-        },
-        {
-            title: '操作', key: 'op', width: 160, render: (_v, _r, idx) => (
-                <Space>
-                    <Button size="small" onClick={() => moveRow(idx, -1)} disabled={idx === 0}>上移</Button>
-                    <Button size="small" onClick={() => moveRow(idx, +1)} disabled={idx === rows.length - 1}>下移</Button>
-                    <Button size="small" danger onClick={() => removeRow(idx)}>移除</Button>
-                </Space>
-            )
-        },
+        }
     ];
 
     const moveRow = (idx: number, delta: number) => {
@@ -149,30 +146,91 @@ export default function EditExamPage() {
 
                 <div className="card"><div className="card-body">
                     <h2 className="card-title">题目列表</h2>
+                    <Space className="mb-3">
+                        <Button onClick={() => setPickerOpen(true)}>添加题目</Button>
+                        <Button onClick={async () => {
+                            // 保存 bulk
+                            const token = localStorage.getItem('token');
+                            if (!token) return message.error('未登录');
+                            const items = rows.map((it, idx) => ({ question_id: it.question_id, order_index: idx + 1, points: pointsMap[it.question_id] ?? it.points ?? 0 }));
+                            const res = await fetchJson<any>(`/api/exams/${examId}/questions/bulk`, { method: 'POST', headers: authHeaders(token), body: JSON.stringify({ items }) });
+                            if (res.success) message.success('已保存题目列表'); else message.error(res.error || '保存失败');
+                        }}>保存题目列表</Button>
+                        <Button onClick={() => message.info('即将支持拖拽排序')}>拖拽排序（待实现）</Button>
+                        <Button type="primary" onClick={() => location.href = `/teacher/exams/${examId}/publish`}>去发布</Button>
+                    </Space>
                     <Table rowKey="exam_question_id" columns={columns} dataSource={rows} pagination={false} />
                 </div></div>
 
-                <Modal open={questionModalOpen} width={800} onCancel={() => setQuestionModalOpen(false)} onOk={addSelectedQuestions} okText="添加所选">
-                    <div className="space-y-2">
-                        <div className="text-sm">从你的题库选择要加入本试卷的题目：</div>
-                        <Table
-                            rowKey="id"
-                            dataSource={questionList}
-                            pagination={{ pageSize: 10 }}
-                            rowSelection={{
-                                selectedRowKeys: selectedQuestionIds,
-                                onChange: (keys) => setSelectedQuestionIds(keys as number[]),
-                            }}
-                            columns={[
-                                { title: 'ID', dataIndex: 'id', width: 100 },
-                                { title: '类型', dataIndex: 'type', width: 160 },
-                                { title: '版本', dataIndex: 'schema_version', width: 120 },
-                                { title: '创建时间', dataIndex: 'created_at' },
-                            ]}
-                        />
-                    </div>
-                </Modal>
+                <Drawer open={pickerOpen} onClose={() => setPickerOpen(false)} title="选择题目" width={720}>
+                    <QuestionPicker selected={selectedIds} onChangeSelected={setSelectedIds} onConfirm={async (picked) => {
+                        const existing = new Set(rows.map(r => r.question_id));
+                        const merged = [...rows];
+                        picked.forEach((qid) => { if (!existing.has(qid)) merged.push({ exam_question_id: `tmp-${qid}`, question_id: qid, order_index: merged.length + 1, points: pointsMap[qid] ?? 0, question: { type: 'unknown' } }); });
+                        setRows(merged);
+                        setPickerOpen(false);
+                    }} />
+                </Drawer>
             </div>
+        </div>
+    );
+}
+
+function QuestionPicker({ selected, onChangeSelected, onConfirm }: { selected: number[]; onChangeSelected: (v: number[]) => void; onConfirm: (picked: number[]) => void; }) {
+    const [rows, setRows] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [type, setType] = useState<string | undefined>(undefined);
+    const [q, setQ] = useState('');
+    useEffect(() => {
+        const token = localStorage.getItem('token');
+        if (!token) return;
+        const params = new URLSearchParams();
+        if (type) params.set('type', type);
+        params.set('includeContent', 'true');
+        fetch(`/api/questions?${params.toString()}`, { headers: { Authorization: `Bearer ${token}` } })
+            .then(r => r.json() as Promise<any>)
+            .then(res => {
+                if (res.success) {
+                    const list = (res.data || []) as any[];
+                    const filtered = q ? list.filter(it => JSON.stringify(it.content_json ?? {}).includes(q)) : list;
+                    setRows(filtered);
+                }
+            })
+            .finally(() => setLoading(false));
+    }, [type, q]);
+    const cols: ColumnsType<any> = [
+        { title: '题目ID', dataIndex: 'id', width: 120 },
+        { title: '类型', dataIndex: 'type', width: 160 },
+        { title: '内容', dataIndex: 'content_json', render: (v) => (v?.stem || v?.text || v?.prompt || '').slice(0, 40) },
+    ];
+    return (
+        <div className="space-y-3">
+            <Space>
+                <AntInput allowClear placeholder="搜索题干/内容" value={q} onChange={e => setQ(e.target.value)} />
+                <Select allowClear placeholder="按题型过滤" style={{ width: 200 }} value={type} onChange={setType as any}
+                    options={[
+                        { value: 'single_choice', label: '单选题' },
+                        { value: 'multiple_choice', label: '多选题' },
+                        { value: 'fill_blank', label: '填空题' },
+                        { value: 'short_answer', label: '简答题' },
+                        { value: 'essay', label: '论述题' },
+                    ]}
+                />
+            </Space>
+            <Table
+                rowKey="id"
+                loading={loading}
+                columns={cols}
+                dataSource={rows}
+                rowSelection={{
+                    selectedRowKeys: selected,
+                    onChange: (keys) => onChangeSelected(keys as number[])
+                }}
+                pagination={{ pageSize: 10 }}
+            />
+            <Space>
+                <Button onClick={() => onConfirm(selected)} type="primary">加入所选</Button>
+            </Space>
         </div>
     );
 }
