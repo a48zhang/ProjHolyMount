@@ -8,8 +8,8 @@ vars = { JWT_SECRET = "dev-secret-key-change-this-for-production" }
 
 [[env.local.d1_databases]]
 binding = "DB"
-database_name = "english-learning-db"
-database_id = "00000000-0000-0000-0000-000000000000"
+database_name = "english-learn"
+database_id = "6d8bb437-6607-4a32-9d74-155362f42687"
 
 [assets]
 binding = "ASSETS"
