@@ -2,8 +2,11 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Button, Space, Modal, Form, Input, message, Select, Tag } from 'antd';
+import { Button, Space, Modal, Form, Input, message, Select, Tag, Card, Typography, Avatar, Statistic, Row, Col, Divider, Spin, Result } from 'antd';
+import { UserOutlined, BookOutlined, TrophyOutlined, CalendarOutlined, EditOutlined, TeamOutlined } from '@ant-design/icons';
 import { ThemeToggle } from '@/components/theme-toggle';
+
+const { Title, Text, Paragraph } = Typography;
 
 
 interface User {
@@ -99,16 +102,37 @@ export default function Dashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-lg">加载中...</div>
+      <div className="container-page">
+        <div className="container-inner">
+          <div style={{ textAlign: 'center', padding: '100px 0' }}>
+            <Spin size="large" />
+            <Title level={4} style={{ marginTop: 16, color: '#666' }}>
+              加载中...
+            </Title>
+          </div>
+        </div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-red-600">{error}</div>
+      <div className="container-page">
+        <div className="container-inner">
+          <Result
+            status="error"
+            title="加载失败"
+            subTitle={error}
+            extra={[
+              <Button type="primary" key="retry" onClick={() => window.location.reload()}>
+                重试
+              </Button>,
+              <Button key="home" onClick={() => router.push('/')}>
+                返回首页
+              </Button>
+            ]}
+          />
+        </div>
       </div>
     );
   }
@@ -120,155 +144,244 @@ export default function Dashboard() {
   return (
     <div className="container-page">
       <div className="container-inner">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <Row gutter={[24, 24]}>
           {/* 用户信息卡片 */}
-          <div className="md:col-span-1">
-            <div className="card p-6">
+          <Col xs={24} md={8}>
+            <Card>
               <div className="text-center">
                 {user.avatar_url ? (
-                  <img src={user.avatar_url} alt="avatar" className="w-16 h-16 rounded-full mx-auto mb-4 object-cover" />
+                  <Avatar size={64} src={user.avatar_url} className="mb-4" />
                 ) : (
-                  <div className="w-16 h-16 bg-blue-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <span className="text-white text-xl font-bold">
-                      {(user.display_name || user.username).charAt(0).toUpperCase()}
-                    </span>
+                  <Avatar 
+                    size={64} 
+                    icon={<UserOutlined />} 
+                    className="mb-4"
+                    style={{ backgroundColor: '#1677ff' }}
+                  >
+                    {(user.display_name || user.username).charAt(0).toUpperCase()}
+                  </Avatar>
+                )}
+                <Title level={3} style={{ marginBottom: 8 }}>
+                  {user.display_name || user.username}
+                </Title>
+                <Text type="secondary">@{user.username}</Text>
+                <br />
+                <Text type="secondary">{user.email}</Text>
+                {user.role && (
+                  <div style={{ marginTop: 8 }}>
+                    <Tag color={user.role === 'admin' ? 'red' : user.role === 'teacher' ? 'green' : 'default'}>
+                      {roleLabel[user.role]}
+                    </Tag>
                   </div>
                 )}
-                <h2 className="text-lg font-semibold">{user.display_name || user.username}</h2>
-                <p className="text-sm muted">@{user.username}</p>
-                <p className="text-sm muted">{user.email}</p>
-                {user.role ? <div className="mt-2"><Tag color={user.role === 'admin' ? 'red' : user.role === 'teacher' ? 'green' : 'default'}>{roleLabel[user.role]}</Tag></div> : null}
               </div>
 
-              <div className="mt-6 space-y-3">
-                <div className="flex justify-between">
-                  <span className="text-sm muted">等级</span>
-                  <span className="text-sm font-semibold">{user.level}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-sm muted">积分</span>
-                  <span className="text-sm font-semibold">{user.points}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-sm muted">注册时间</span>
-                  <span className="text-sm muted">
+              <Divider />
+
+              <Space direction="vertical" style={{ width: '100%' }} size="middle">
+                <Row justify="space-between">
+                  <Text type="secondary">等级</Text>
+                  <Text strong>{user.level}</Text>
+                </Row>
+                <Row justify="space-between">
+                  <Text type="secondary">积分</Text>
+                  <Text strong>{user.points}</Text>
+                </Row>
+                <Row justify="space-between">
+                  <Text type="secondary">注册时间</Text>
+                  <Text type="secondary">
                     {new Date(user.created_at).toLocaleDateString('zh-CN')}
-                  </span>
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <Button onClick={openEdit}>编辑资料</Button>
-                  <Button onClick={() => { setRoleValue(user.role ?? 'student'); setRoleOpen(true); }}>修改角色</Button>
-                </div>
-              </div>
-            </div>
+                  </Text>
+                </Row>
+                
+                <Row gutter={[8, 8]}>
+                  <Col span={12}>
+                    <Button 
+                      block 
+                      icon={<EditOutlined />} 
+                      onClick={openEdit}
+                    >
+                      编辑资料
+                    </Button>
+                  </Col>
+                  <Col span={12}>
+                    <Button 
+                      block 
+                      icon={<TeamOutlined />} 
+                      onClick={() => { setRoleValue(user.role ?? 'student'); setRoleOpen(true); }}
+                    >
+                      修改角色
+                    </Button>
+                  </Col>
+                </Row>
+              </Space>
+            </Card>
 
             {/* 快速操作 */}
-            <div className="card p-6 mt-6">
-              <h3 className="card-title mb-4">快捷入口</h3>
-              <div className="space-y-2">
-                <Button block type="primary" onClick={() => router.push('/exams')}>进入考试</Button>
+            <Card title="快捷入口" style={{ marginTop: 24 }}>
+              <Space direction="vertical" style={{ width: '100%' }} size="small">
+                <Button 
+                  block 
+                  type="primary" 
+                  size="large" 
+                  icon={<BookOutlined />} 
+                  onClick={() => router.push('/exams')}
+                >
+                  进入考试
+                </Button>
                 {user.role === 'teacher' || user.role === 'admin' ? (
                   <>
-                    <Button block onClick={() => router.push('/teacher/exams')}>教师中心（试卷）</Button>
-                    <Button block onClick={() => router.push('/teacher/questions')}>题库管理</Button>
-                  </>
-                ) : null}
-              </div>
-            </div>
-          </div>
-
-          {/* 主要内容区域 */}
-          <div className="md:col-span-2">
-            {/* 考试入口卡片 */}
-            <div className="card p-6 mb-6">
-              <h3 className="card-title mb-4">考试入口</h3>
-              <Space>
-                <Button type="primary" onClick={() => router.push('/exams')}>我的考试</Button>
-                {user.role === 'teacher' || user.role === 'admin' ? (
-                  <>
-                    <Button onClick={() => router.push('/teacher/exams')}>我创建的试卷</Button>
-                    <Button onClick={() => router.push('/teacher/questions')}>题库</Button>
+                    <Button 
+                      block 
+                      onClick={() => router.push('/teacher/exams')}
+                    >
+                      教师中心（试卷）
+                    </Button>
+                    <Button 
+                      block 
+                      onClick={() => router.push('/teacher/questions')}
+                    >
+                      题库管理
+                    </Button>
                   </>
                 ) : null}
               </Space>
-            </div>
+            </Card>
+          </Col>
+
+          {/* 主要内容区域 */}
+          <Col xs={24} md={16}>
+            {/* 考试入口卡片 */}
+            <Card title="考试入口" style={{ marginBottom: 24 }}>
+              <Space wrap>
+                <Button 
+                  type="primary" 
+                  size="large" 
+                  icon={<BookOutlined />} 
+                  onClick={() => router.push('/exams')}
+                >
+                  我的考试
+                </Button>
+                {user.role === 'teacher' || user.role === 'admin' ? (
+                  <>
+                    <Button 
+                      size="large" 
+                      onClick={() => router.push('/teacher/exams')}
+                    >
+                      我创建的试卷
+                    </Button>
+                    <Button 
+                      size="large" 
+                      onClick={() => router.push('/teacher/questions')}
+                    >
+                      题库
+                    </Button>
+                  </>
+                ) : null}
+              </Space>
+            </Card>
 
             {/* 学习统计 */}
-            <div className="card p-6 mb-6">
-              <h3 className="card-title mb-4">学习统计</h3>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="text-center p-4 bg-blue-50 dark:bg-blue-900/30 rounded-lg">
-                  <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">0</div>
-                  <div className="text-sm muted">已学单词</div>
-                </div>
-                <div className="text-center p-4 bg-green-50 dark:bg-green-900/30 rounded-lg">
-                  <div className="text-2xl font-bold text-green-600 dark:text-green-400">0</div>
-                  <div className="text-sm muted">掌握单词</div>
-                </div>
-                <div className="text-center p-4 bg-yellow-50 dark:bg-yellow-900/30 rounded-lg">
-                  <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">0</div>
-                  <div className="text-sm muted">今日学习</div>
-                </div>
-                <div className="text-center p-4 bg-purple-50 dark:bg-purple-900/30 rounded-lg">
-                  <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">0</div>
-                  <div className="text-sm muted">连续天数</div>
-                </div>
-              </div>
-            </div>
+            <Card title="学习统计" style={{ marginBottom: 24 }}>
+              <Row gutter={[16, 16]}>
+                <Col xs={12} sm={6}>
+                  <Card size="small" className="text-center">
+                    <Statistic
+                      title="已学单词"
+                      value={0}
+                      valueStyle={{ color: '#1677ff' }}
+                      prefix={<BookOutlined />}
+                    />
+                  </Card>
+                </Col>
+                <Col xs={12} sm={6}>
+                  <Card size="small" className="text-center">
+                    <Statistic
+                      title="掌握单词"
+                      value={0}
+                      valueStyle={{ color: '#52c41a' }}
+                      prefix={<TrophyOutlined />}
+                    />
+                  </Card>
+                </Col>
+                <Col xs={12} sm={6}>
+                  <Card size="small" className="text-center">
+                    <Statistic
+                      title="今日学习"
+                      value={0}
+                      valueStyle={{ color: '#faad14' }}
+                      prefix={<CalendarOutlined />}
+                    />
+                  </Card>
+                </Col>
+                <Col xs={12} sm={6}>
+                  <Card size="small" className="text-center">
+                    <Statistic
+                      title="连续天数"
+                      value={0}
+                      valueStyle={{ color: '#722ed1' }}
+                      prefix={<UserOutlined />}
+                    />
+                  </Card>
+                </Col>
+              </Row>
+            </Card>
 
             {/* 今日推荐 */}
-            <div className="card p-6 mb-6">
-              <h3 className="card-title mb-4">今日推荐</h3>
-              <div className="space-y-4">
-                <div className="border-l-4 border-blue-500 dark:border-blue-400 pl-4">
-                  <h4 className="font-medium">今日单词</h4>
-                  <p className="text-sm muted">开始学习今天的10个新单词</p>
-                  <button className="mt-2 bg-blue-600 dark:bg-blue-500 text-white px-4 py-2 rounded text-sm hover:bg-blue-700 dark:hover:bg-blue-600">
-                    开始学习
-                  </button>
-                </div>
-                <div className="border-l-4 border-green-500 dark:border-green-400 pl-4">
-                  <h4 className="font-medium">复习提醒</h4>
-                  <p className="text-sm muted">复习之前学过的单词</p>
-                  <button className="mt-2 bg-green-600 dark:bg-green-500 text-white px-4 py-2 rounded text-sm hover:bg-green-700 dark:hover:bg-green-600">
-                    开始复习
-                  </button>
-                </div>
-              </div>
-            </div>
+            <Card title="今日推荐" style={{ marginBottom: 24 }}>
+              <Space direction="vertical" style={{ width: '100%' }} size="large">
+                <Card size="small" style={{ borderLeft: '4px solid #1677ff' }}>
+                  <Title level={5} style={{ marginBottom: 8 }}>今日单词</Title>
+                  <Paragraph type="secondary" style={{ marginBottom: 12 }}>
+                    开始学习今天的10个新单词
+                  </Paragraph>
+                  <Button type="primary">开始学习</Button>
+                </Card>
+                <Card size="small" style={{ borderLeft: '4px solid #52c41a' }}>
+                  <Title level={5} style={{ marginBottom: 8 }}>复习提醒</Title>
+                  <Paragraph type="secondary" style={{ marginBottom: 12 }}>
+                    复习之前学过的单词
+                  </Paragraph>
+                  <Button type="primary" style={{ backgroundColor: '#52c41a' }}>开始复习</Button>
+                </Card>
+              </Space>
+            </Card>
 
             {/* 学习进度 */}
-            <div className="card p-6">
-              <h3 className="card-title mb-4">学习进度</h3>
-              <div className="space-y-4">
-                <div>
-                  <div className="flex justify-between text-sm mb-1">
-                    <span>当前等级</span>
-                    <span>等级 {user.level}</span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div
-                      className="bg-blue-600 h-2 rounded-full"
-                      style={{ width: `${Math.min((user.points % 100), 100)}%` }}
-                    ></div>
-                  </div>
-                  <div className="text-xs muted mt-1">
-                    {user.points % 100}/100 积分到下一级
-                  </div>
+            <Card title="学习进度" style={{ marginBottom: 24 }}>
+              <Space direction="vertical" style={{ width: '100%' }}>
+                <Row justify="space-between">
+                  <Text type="secondary">当前等级</Text>
+                  <Text strong>等级 {user.level}</Text>
+                </Row>
+                <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div
+                    className="bg-blue-600 h-2 rounded-full"
+                    style={{ width: `${Math.min((user.points % 100), 100)}%` }}
+                  ></div>
                 </div>
-              </div>
-            </div>
+                <Text type="secondary" style={{ fontSize: 12 }}>
+                  {user.points % 100}/100 积分到下一级
+                </Text>
+              </Space>
+            </Card>
 
             {/* 推荐考试列表 */}
-            <div className="card p-6 mt-6">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="card-title">推荐考试</h3>
-                <Button type="link" onClick={() => router.push('/exams?list=public')}>查看全部公开考试</Button>
-              </div>
+            <Card 
+              title="推荐考试"
+              extra={
+                <Button 
+                  type="link" 
+                  onClick={() => router.push('/exams?list=public')}
+                >
+                  查看全部公开考试
+                </Button>
+              }
+            >
               <RecommendedExams />
-            </div>
-          </div>
-        </div>
+            </Card>
+          </Col>
+        </Row>
       </div>
       <Modal
         open={editOpen}
@@ -337,6 +450,7 @@ function RecommendedExams() {
   const router = useRouter();
   const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  
   useEffect(() => {
     const token = localStorage.getItem('token');
     fetch(`/api/exams?list=public&limit=5`, { headers: token ? { Authorization: `Bearer ${token}` } : undefined })
@@ -344,19 +458,33 @@ function RecommendedExams() {
       .then(res => { if (res.success) setItems(res.data || []); })
       .finally(() => setLoading(false));
   }, []);
-  if (loading) return <div className="text-sm text-gray-500">加载中...</div>;
-  if (!items.length) return <div className="text-sm text-gray-500">暂无推荐考试</div>;
+  
+  if (loading) return <Text type="secondary">加载中...</Text>;
+  if (!items.length) return <Text type="secondary">暂无推荐考试</Text>;
+  
   return (
-    <ul className="divide-y divide-gray-200 dark:divide-gray-700">
+    <Space direction="vertical" style={{ width: '100%' }} size="middle">
       {items.map((e) => (
-        <li key={e.id} className="py-3 flex items-center justify-between">
-          <div>
-            <div className="font-medium">{e.title}</div>
-            <div className="text-xs text-gray-500">{e.duration_minutes ? `${e.duration_minutes} 分钟` : '不限时'} · 总分 {e.total_points}</div>
-          </div>
-          <Button type="primary" size="small" onClick={() => router.push(`/exams/${e.id}/take`)}>进入</Button>
-        </li>
+        <Card key={e.id} size="small">
+          <Row justify="space-between" align="middle">
+            <Col>
+              <Title level={5} style={{ marginBottom: 4 }}>{e.title}</Title>
+              <Text type="secondary" style={{ fontSize: 12 }}>
+                {e.duration_minutes ? `${e.duration_minutes} 分钟` : '不限时'} · 总分 {e.total_points}
+              </Text>
+            </Col>
+            <Col>
+              <Button 
+                type="primary" 
+                size="small" 
+                onClick={() => router.push(`/exams/${e.id}/take`)}
+              >
+                进入
+              </Button>
+            </Col>
+          </Row>
+        </Card>
       ))}
-    </ul>
+    </Space>
   );
 }

@@ -91,7 +91,50 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
                 locale={zhCN}
                 theme={{
                     algorithm: isDark ? antdTheme.darkAlgorithm : antdTheme.defaultAlgorithm,
-                    token: { colorPrimary: isDark ? '#60a5fa' : '#1677ff' },
+                    token: {
+                        colorPrimary: isDark ? '#60a5fa' : '#1677ff',
+                        borderRadius: 8,
+                        controlHeight: 36,
+                        fontSize: 14,
+                        fontFamily: 'var(--font-geist-sans), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                        // Colors for better consistency
+                        colorSuccess: isDark ? '#22c55e' : '#16a34a',
+                        colorWarning: isDark ? '#f59e0b' : '#d97706',
+                        colorError: isDark ? '#ef4444' : '#dc2626',
+                        colorInfo: isDark ? '#60a5fa' : '#2563eb',
+                        // Card and surface colors
+                        colorBgContainer: isDark ? '#111827' : '#ffffff',
+                        colorBgElevated: isDark ? '#1f2937' : '#ffffff',
+                        colorBorder: isDark ? '#374151' : '#e5e7eb',
+                        colorBorderSecondary: isDark ? '#4b5563' : '#f3f4f6',
+                        // Text colors
+                        colorText: isDark ? '#f9fafb' : '#111827',
+                        colorTextSecondary: isDark ? '#d1d5db' : '#6b7280',
+                        colorTextTertiary: isDark ? '#9ca3af' : '#9ca3af',
+                        colorTextQuaternary: isDark ? '#6b7280' : '#d1d5db',
+                    },
+                    components: {
+                        Card: {
+                            borderRadiusLG: 12,
+                            paddingLG: 24,
+                        },
+                        Button: {
+                            borderRadius: 8,
+                            controlHeight: 36,
+                            fontWeight: 500,
+                        },
+                        Input: {
+                            borderRadius: 8,
+                            controlHeight: 36,
+                        },
+                        Select: {
+                            borderRadius: 8,
+                            controlHeight: 36,
+                        },
+                        Table: {
+                            borderRadiusLG: 8,
+                        },
+                    },
                 }}
             >
                 <AntdApp>{children}</AntdApp>
