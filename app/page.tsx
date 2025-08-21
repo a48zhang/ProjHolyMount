@@ -3,6 +3,10 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ThemeToggle } from '@/components/theme-toggle';
+import { Card, Button, Form, Input, Typography, Space, Row, Col, message } from 'antd';
+import { UserOutlined, LockOutlined, MailOutlined, EditOutlined, LoginOutlined, UserAddOutlined } from '@ant-design/icons';
+
+const { Title, Paragraph, Text } = Typography;
 
 export default function Home() {
   const [showLogin, setShowLogin] = useState(false);
@@ -36,98 +40,107 @@ export default function Home() {
       </div>
       <div className="max-w-4xl mx-auto text-center">
         <div className="mb-8">
-          <h1 className="text-5xl font-bold text-gray-900 dark:text-white mb-4">
+          <Title level={1} style={{ fontSize: '3rem', marginBottom: 16 }}>
             英语学习平台
-          </h1>
-          <p className="text-xl text-gray-600 dark:text-gray-300 mb-8">
+          </Title>
+          <Paragraph style={{ fontSize: '1.25rem', marginBottom: 32 }}>
             开启你的英语学习之旅，每天进步一点点
-          </p>
+          </Paragraph>
         </div>
 
-        <div className="card p-8 mb-8">
-          <div className="grid md:grid-cols-3 gap-6 mb-8">
-            <div className="text-center">
-              <div className="bg-blue-100 dark:bg-blue-900 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-3">
-                <span className="text-2xl">📚</span>
+        <Card style={{ padding: '2rem', marginBottom: 32 }}>
+          <Row gutter={[24, 24]} style={{ marginBottom: 32 }}>
+            <Col xs={24} md={8}>
+              <div className="text-center">
+                <div className="bg-blue-100 dark:bg-blue-900 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-3">
+                  <span className="text-2xl">📚</span>
+                </div>
+                <Title level={4} style={{ marginBottom: 8 }}>词汇学习</Title>
+                <Text type="secondary">循序渐进的词汇积累</Text>
               </div>
-              <h3 className="font-semibold text-gray-900 dark:text-white mb-2">词汇学习</h3>
-              <p className="text-sm text-gray-600 dark:text-gray-300">循序渐进的词汇积累</p>
-            </div>
-            <div className="text-center">
-              <div className="bg-green-100 dark:bg-green-900 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-3">
-                <span className="text-2xl">🎯</span>
+            </Col>
+            <Col xs={24} md={8}>
+              <div className="text-center">
+                <div className="bg-green-100 dark:bg-green-900 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-3">
+                  <span className="text-2xl">🎯</span>
+                </div>
+                <Title level={4} style={{ marginBottom: 8 }}>个性学习</Title>
+                <Text type="secondary">根据你的水平定制内容</Text>
               </div>
-              <h3 className="font-semibold text-gray-900 dark:text-white mb-2">个性学习</h3>
-              <p className="text-sm text-gray-600 dark:text-gray-300">根据你的水平定制内容</p>
-            </div>
-            <div className="text-center">
-              <div className="bg-purple-100 dark:bg-purple-900 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-3">
-                <span className="text-2xl">📊</span>
+            </Col>
+            <Col xs={24} md={8}>
+              <div className="text-center">
+                <div className="bg-purple-100 dark:bg-purple-900 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-3">
+                  <span className="text-2xl">📊</span>
+                </div>
+                <Title level={4} style={{ marginBottom: 8 }}>学习追踪</Title>
+                <Text type="secondary">记录你的学习进度</Text>
               </div>
-              <h3 className="font-semibold text-gray-900 dark:text-white mb-2">学习追踪</h3>
-              <p className="text-sm text-gray-600 dark:text-gray-300">记录你的学习进度</p>
-            </div>
-          </div>
+            </Col>
+          </Row>
 
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <button
+          <Space size="large" wrap>
+            <Button
+              type="primary"
+              size="large"
+              icon={<LoginOutlined />}
               onClick={handleLogin}
-              className="bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
+              style={{ minWidth: 120 }}
             >
               登录账号
-            </button>
-            <button
+            </Button>
+            <Button
+              size="large"
+              icon={<UserAddOutlined />}
               onClick={handleRegister}
-              className="bg-green-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-green-700 transition-colors"
+              style={{ minWidth: 120, backgroundColor: '#52c41a', borderColor: '#52c41a', color: 'white' }}
             >
               注册新账号
-            </button>
-            <button
+            </Button>
+            <Button
+              size="large"
               onClick={handleGuest}
-              className="bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-gray-200 px-6 py-3 rounded-lg font-semibold hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+              style={{ minWidth: 120 }}
             >
               游客访问
-            </button>
-          </div>
-        </div>
+            </Button>
+          </Space>
+        </Card>
 
-        <div className="text-sm text-gray-500 dark:text-gray-400">
-          <p>已有 1000+ 用户在这里提升了英语水平</p>
-        </div>
+        <Text type="secondary">
+          已有 1000+ 用户在这里提升了英语水平
+        </Text>
       </div>
     </div>
   );
 }
 
 function LoginForm({ onBack }: { onBack: () => void }) {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
   const router = useRouter();
+  const [form] = Form.useForm();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (values: { username: string; password: string }) => {
     setLoading(true);
-    setError('');
 
     try {
       const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password }),
+        body: JSON.stringify(values),
       });
 
       const data = await response.json() as { success: boolean; data: { token: string }; error?: string };
 
       if (data.success) {
         localStorage.setItem('token', data.data.token);
+        message.success('登录成功！');
         router.push('/dashboard');
       } else {
-        setError(data.error || '登录失败');
+        message.error(data.error || '登录失败');
       }
     } catch (err) {
-      setError('网络错误，请重试');
+      message.error('网络错误，请重试');
     } finally {
       setLoading(false);
     }
@@ -135,97 +148,95 @@ function LoginForm({ onBack }: { onBack: () => void }) {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
-      <div className="card p-8 w-full max-w-md">
-        <h2 className="text-2xl font-bold text-center mb-6">登录账号</h2>
+      <Card style={{ width: '100%', maxWidth: 400 }}>
+        <Title level={2} style={{ textAlign: 'center', marginBottom: 32 }}>
+          登录账号
+        </Title>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium mb-1">
-              用户名
-            </label>
-            <input
-              type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              className="input focus:outline-none focus:ring-2 focus:ring-blue-500"
-              required
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-1">
-              密码
-            </label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="input focus:outline-none focus:ring-2 focus:ring-blue-500"
-              required
-            />
-          </div>
-
-          {error && (
-            <div className="text-red-600 dark:text-red-400 text-sm">{error}</div>
-          )}
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 disabled:opacity-50"
+        <Form
+          form={form}
+          onFinish={handleSubmit}
+          layout="vertical"
+          size="large"
+        >
+          <Form.Item
+            name="username"
+            label="用户名"
+            rules={[{ required: true, message: '请输入用户名' }]}
           >
-            {loading ? '登录中...' : '登录'}
-          </button>
-        </form>
+            <Input 
+              prefix={<UserOutlined />} 
+              placeholder="请输入用户名" 
+            />
+          </Form.Item>
 
-        <button
+          <Form.Item
+            name="password"
+            label="密码"
+            rules={[{ required: true, message: '请输入密码' }]}
+          >
+            <Input.Password 
+              prefix={<LockOutlined />} 
+              placeholder="请输入密码" 
+            />
+          </Form.Item>
+
+          <Form.Item>
+            <Button
+              type="primary"
+              htmlType="submit"
+              loading={loading}
+              block
+              size="large"
+            >
+              {loading ? '登录中...' : '登录'}
+            </Button>
+          </Form.Item>
+        </Form>
+
+        <Button
+          type="link"
           onClick={onBack}
-          className="w-full mt-4 text-gray-600 hover:text-gray-800"
+          block
         >
           返回
-        </button>
-      </div>
+        </Button>
+      </Card>
     </div>
   );
 }
 
 function RegisterForm({ onBack }: { onBack: () => void }) {
-  const [formData, setFormData] = useState({
-    username: '',
-    email: '',
-    password: '',
-    display_name: '',
-  });
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
   const router = useRouter();
+  const [form] = Form.useForm();
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (values: {
+    username: string;
+    email: string;
+    password: string;
+    display_name?: string;
+  }) => {
     setLoading(true);
-    setError('');
 
     try {
       const response = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(values),
       });
 
       const data = await response.json() as { success: boolean; data: { username: string; email: string; display_name: string }; error?: string };
 
       if (data.success) {
+        message.success('注册成功！正在自动登录...');
         // 注册成功后自动登录
         const loginResponse = await fetch('/api/auth/login', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            username: formData.username,
-            password: formData.password,
+            username: values.username,
+            password: values.password,
           }),
         });
 
@@ -235,10 +246,10 @@ function RegisterForm({ onBack }: { onBack: () => void }) {
           router.push('/dashboard');
         }
       } else {
-        setError(data.error || '注册失败');
+        message.error(data.error || '注册失败');
       }
     } catch (err) {
-      setError('网络错误，请重试');
+      message.error('网络错误，请重试');
     } finally {
       setLoading(false);
     }
@@ -246,85 +257,97 @@ function RegisterForm({ onBack }: { onBack: () => void }) {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
-      <div className="card p-8 w-full max-w-md">
-        <h2 className="text-2xl font-bold text-center mb-6">注册新账号</h2>
+      <Card style={{ width: '100%', maxWidth: 400 }}>
+        <Title level={2} style={{ textAlign: 'center', marginBottom: 32 }}>
+          注册新账号
+        </Title>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium mb-1">
-              用户名
-            </label>
-            <input
-              type="text"
-              name="username"
-              value={formData.username}
-              onChange={handleChange}
-              className="input focus:outline-none focus:ring-2 focus:ring-blue-500"
-              required
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-1">
-              邮箱
-            </label>
-            <input
-              type="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              className="input focus:outline-none focus:ring-2 focus:ring-blue-500"
-              required
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-1">
-              显示名称
-            </label>
-            <input
-              type="text"
-              name="display_name"
-              value={formData.display_name}
-              onChange={handleChange}
-              className="input focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-1">
-              密码
-            </label>
-            <input
-              type="password"
-              name="password"
-              value={formData.password}
-              onChange={handleChange}
-              className="input focus:outline-none focus:ring-2 focus:ring-blue-500"
-              required
-            />
-          </div>
-
-          {error && (
-            <div className="text-red-600 dark:text-red-400 text-sm">{error}</div>
-          )}
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 disabled:opacity-50"
+        <Form
+          form={form}
+          onFinish={handleSubmit}
+          layout="vertical"
+          size="large"
+        >
+          <Form.Item
+            name="username"
+            label="用户名"
+            rules={[
+              { required: true, message: '请输入用户名' },
+              { min: 3, message: '用户名至少3个字符' },
+              { max: 50, message: '用户名不能超过50个字符' },
+              { pattern: /^[a-zA-Z0-9_-]+$/, message: '用户名只能包含字母、数字、下划线和破折号' }
+            ]}
           >
-            {loading ? '注册中...' : '注册'}
-          </button>
-        </form>
+            <Input 
+              prefix={<UserOutlined />} 
+              placeholder="请输入用户名" 
+            />
+          </Form.Item>
 
-        <button
+          <Form.Item
+            name="email"
+            label="邮箱"
+            rules={[
+              { required: true, message: '请输入邮箱' },
+              { type: 'email', message: '请输入有效的邮箱地址' }
+            ]}
+          >
+            <Input 
+              prefix={<MailOutlined />} 
+              placeholder="请输入邮箱" 
+            />
+          </Form.Item>
+
+          <Form.Item
+            name="display_name"
+            label="显示名称"
+            rules={[
+              { max: 100, message: '显示名称不能超过100个字符' }
+            ]}
+          >
+            <Input 
+              prefix={<EditOutlined />} 
+              placeholder="请输入显示名称（可选）" 
+            />
+          </Form.Item>
+
+          <Form.Item
+            name="password"
+            label="密码"
+            rules={[
+              { required: true, message: '请输入密码' },
+              { min: 6, message: '密码至少6个字符' },
+              { max: 128, message: '密码不能超过128个字符' }
+            ]}
+          >
+            <Input.Password 
+              prefix={<LockOutlined />} 
+              placeholder="请输入密码" 
+            />
+          </Form.Item>
+
+          <Form.Item>
+            <Button
+              type="primary"
+              htmlType="submit"
+              loading={loading}
+              block
+              size="large"
+              style={{ backgroundColor: '#52c41a', borderColor: '#52c41a' }}
+            >
+              {loading ? '注册中...' : '注册'}
+            </Button>
+          </Form.Item>
+        </Form>
+
+        <Button
+          type="link"
           onClick={onBack}
-          className="w-full mt-4 text-gray-600 hover:text-gray-800"
+          block
         >
           返回
-        </button>
-      </div>
+        </Button>
+      </Card>
     </div>
   );
 }

@@ -1,9 +1,12 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Table, Tag, Space, Button, Select, message } from 'antd';
+import { Table, Tag, Space, Button, Select, message, Card, Typography } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { useRouter } from 'next/navigation';
+import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
+
+const { Title } = Typography;
 
 export default function TeacherQuestionsPage() {
     const router = useRouter();
@@ -55,8 +58,19 @@ export default function TeacherQuestionsPage() {
         {
             title: '操作', width: 200, render: (_, r) => (
                 <Space>
-                    <Button onClick={() => router.push(`/teacher/questions/${r.id}/edit`)}>编辑</Button>
-                    <Button danger onClick={() => del(r.id)}>删除</Button>
+                    <Button 
+                        icon={<EditOutlined />} 
+                        onClick={() => router.push(`/teacher/questions/${r.id}/edit`)}
+                    >
+                        编辑
+                    </Button>
+                    <Button 
+                        danger 
+                        icon={<DeleteOutlined />} 
+                        onClick={() => del(r.id)}
+                    >
+                        删除
+                    </Button>
                 </Space>
             )
         }
@@ -65,13 +79,26 @@ export default function TeacherQuestionsPage() {
     return (
         <div className="container-page">
             <div className="container-inner max-w-5xl">
-                <div className="flex items-center justify-between mb-4">
-                    <h1>题库</h1>
-                    <Button type="primary" onClick={() => router.push('/teacher/questions/new')}>新建题目</Button>
-                </div>
-                <div className="card"><div className="card-body">
-                    <div className="mb-4">
-                        <Select allowClear placeholder="按题型过滤" style={{ width: 240 }} value={type} onChange={setType as any}
+                <Card>
+                    <div className="flex items-center justify-between mb-6">
+                        <Title level={2} style={{ margin: 0 }}>题库管理</Title>
+                        <Button 
+                            type="primary" 
+                            size="large" 
+                            icon={<PlusOutlined />} 
+                            onClick={() => router.push('/teacher/questions/new')}
+                        >
+                            新建题目
+                        </Button>
+                    </div>
+                    
+                    <div style={{ marginBottom: 16 }}>
+                        <Select 
+                            allowClear 
+                            placeholder="按题型过滤" 
+                            style={{ width: 240 }} 
+                            value={type} 
+                            onChange={setType as any}
                             options={[
                                 { value: 'single_choice', label: '单选题' },
                                 { value: 'multiple_choice', label: '多选题' },
@@ -81,8 +108,19 @@ export default function TeacherQuestionsPage() {
                             ]}
                         />
                     </div>
-                    <Table rowKey="id" columns={columns} dataSource={rows} loading={loading} pagination={{ pageSize: 10 }} />
-                </div></div>
+                    
+                    <Table 
+                        rowKey="id" 
+                        columns={columns} 
+                        dataSource={rows} 
+                        loading={loading} 
+                        pagination={{ 
+                            pageSize: 10,
+                            showSizeChanger: true,
+                            showTotal: (total) => `共 ${total} 条记录`
+                        }} 
+                    />
+                </Card>
             </div>
         </div>
     );
