@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 import { getAuthContext } from '@/lib/auth';
+import { withApiLogging } from '@/lib/logger';
 
-export async function GET(request: Request) {
+export const GET = withApiLogging(async (request: Request) => {
     try {
         const ctx = await getAuthContext(request);
         const pathname = new URL(request.url).pathname;
@@ -23,7 +24,7 @@ export async function GET(request: Request) {
         console.error('获取提交状态错误:', error);
         return NextResponse.json({ success: false, error: '服务器内部错误' }, { status: 500 });
     }
-}
+});
 
 
 

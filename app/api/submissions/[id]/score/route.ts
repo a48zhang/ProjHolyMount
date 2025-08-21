@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 import { getAuthContext } from '@/lib/auth';
+import { withApiLogging } from '@/lib/logger';
 
-export async function POST(request: Request) {
+export const POST = withApiLogging(async (request: Request) => {
     try {
         const ctx = await getAuthContext(request);
         const pathname = new URL(request.url).pathname;
@@ -46,5 +47,5 @@ export async function POST(request: Request) {
         console.error('人工评分错误:', error);
         return NextResponse.json({ success: false, error: '服务器内部错误' }, { status: 500 });
     }
-}
+});
 

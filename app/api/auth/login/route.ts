@@ -2,13 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getCloudflareContext } from '@opennextjs/cloudflare';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import { withApiLogging } from '@/lib/logger';
 
 interface LoginRequest {
   username: string;
   password: string;
 }
 
-export async function POST(request: NextRequest) {
+export const POST = withApiLogging(async (request: NextRequest) => {
   try {
     const { env } = await getCloudflareContext();
     const body: LoginRequest = await request.json();
@@ -107,4 +108,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+});

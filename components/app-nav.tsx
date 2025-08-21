@@ -1,5 +1,6 @@
 'use client';
 
+import React from 'react';
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
@@ -89,6 +90,16 @@ export default function AppNav() {
                     ),
                 },
             );
+        }
+
+        if (role === 'admin') {
+            base.push({
+                key: 'admin:home',
+                icon: <ProfileOutlined />,
+                label: (
+                    <Link href="/admin" className="no-underline">Admin</Link>
+                ),
+            });
         }
 
         return base;

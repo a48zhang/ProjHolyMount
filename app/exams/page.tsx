@@ -44,12 +44,9 @@ function ExamsPageInner() {
 
     useEffect(() => {
         const token = localStorage.getItem('token');
-        if (!token) {
-            router.push('/');
-            return;
-        }
+        if (!isPublic && !token) { router.push('/'); return; }
         const url = isPublic ? '/api/exams?list=public' : '/api/exams';
-        fetch(url, { headers: { Authorization: `Bearer ${token}` } })
+        fetch(url, { headers: isPublic ? ({} as any) : { Authorization: `Bearer ${token}` } })
             .then(r => r.json() as Promise<any>)
             .then((res: any) => {
                 if (res.success) setItems(res.data || []);
@@ -71,7 +68,7 @@ function ExamsPageInner() {
             </div>
         );
     }
-    
+
     if (error) {
         return (
             <div className="container-page">
@@ -103,21 +100,21 @@ function ExamsPageInner() {
                             {isPublic ? '公开考试' : '我的考试'}
                         </Title>
                         <Space size="small">
-                            <Button 
-                                type={isPublic ? 'default' : 'primary'} 
+                            <Button
+                                type={isPublic ? 'default' : 'primary'}
                                 onClick={() => router.push('/exams')}
                             >
                                 我的考试
                             </Button>
-                            <Button 
-                                type={isPublic ? 'primary' : 'default'} 
+                            <Button
+                                type={isPublic ? 'primary' : 'default'}
                                 onClick={() => router.push('/exams?list=public')}
                             >
                                 公开考试
                             </Button>
                         </Space>
                     </div>
-                    
+
                     {items.length === 0 ? (
                         <Result
                             icon={<BookOutlined />}
@@ -157,12 +154,16 @@ function ExamsPageInner() {
                                                     {e.status === 'published' ? '已发布' : e.status === 'closed' ? '已关闭' : '草稿'}
                                                 </Tag>
                                                 {e.status === 'published' ? (
-                                                    <Button 
-                                                        type="primary" 
-                                                        onClick={() => router.push(`/exams/${e.id}/take`)}
-                                                    >
-                                                        进入考试
-                                                    </Button>
+                                                    isPublic ? (
+                                                        <Button onClick={() => router.push(`/exams/${e.id}`)}>查看详情</Button>
+                                                    ) : (
+                                                        <Button
+                                                            type="primary"
+                                                            onClick={() => router.push(`/exams/${e.id}/take`)}
+                                                        >
+                                                            进入考试
+                                                        </Button>
+                                                    )
                                                 ) : (
                                                     <Text type="secondary">未开始</Text>
                                                 )}

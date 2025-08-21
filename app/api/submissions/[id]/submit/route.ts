@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getAuthContext } from '@/lib/auth';
+import type { AuthContext } from '@/lib/auth';
+import { withApiLogging } from '@/lib/logger';
 
 type Question = {
     id: number;
@@ -8,7 +10,7 @@ type Question = {
     answer_key_json: string | null;
 };
 
-function scoreObjective(question: Question, answer: any): number {
+export function scoreObjective(question: Question, answer: any): number {
     try {
         const type = question.type;
         const key = question.answer_key_json ? JSON.parse(question.answer_key_json) : null;
@@ -41,13 +43,8 @@ function scoreObjective(question: Question, answer: any): number {
     }
 }
 
-export async function POST(request: Request) {
+export async function submitWithContext(ctx: AuthContext, submissionId: number) {
     try {
-        const ctx = await getAuthContext(request);
-        const pathname = new URL(request.url).pathname;
-        const parts = pathname.split('/');
-        const idx = parts.findIndex(p => p === 'submissions');
-        const submissionId = idx >= 0 && parts[idx + 1] ? Number(parts[idx + 1]) : NaN;
         if (!Number.isFinite(submissionId)) return NextResponse.json({ success: false, error: '参数错误' }, { status: 400 });
 
         const sub = await ctx.env.DB
@@ -97,4 +94,13 @@ export async function POST(request: Request) {
         return NextResponse.json({ success: false, error: '服务器内部错误' }, { status: 500 });
     }
 }
+
+export const POST = withApiLogging(async (request: Request) => {
+    const ctx = await getAuthContext(request);
+    const pathname = new URL(request.url).pathname;
+    const parts = pathname.split('/');
+    const idx = parts.findIndex(p => p === 'submissions');
+    const submissionId = idx >= 0 && parts[idx + 1] ? Number(parts[idx + 1]) : NaN;
+    return submitWithContext(ctx, submissionId);
+});
 

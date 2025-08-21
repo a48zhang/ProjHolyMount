@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 import { getAuthContext } from '@/lib/auth';
+import { withApiLogging } from '@/lib/logger';
 
-export async function POST(request: Request) {
+export const POST = withApiLogging(async (request: Request) => {
     try {
         const ctx = await getAuthContext(request);
         if (ctx.role !== 'admin') return NextResponse.json({ success: false, error: '无权操作' }, { status: 403 });
@@ -15,7 +16,7 @@ export async function POST(request: Request) {
         const body = await request.json() as { plan?: string; grade_level?: string | null; plan_expires_at?: string | null };
 
         await ctx.env.DB
-            .prepare('INSERT INTO user_profile (user_id, plan, grade_level, plan_expires_at) VALUES (?, COALESCE(?, \"free\"), ?, ?) ON CONFLICT(user_id) DO UPDATE SET plan=COALESCE(?, plan), grade_level=COALESCE(?, grade_level), plan_expires_at=COALESCE(?, plan_expires_at)')
+            .prepare('INSERT INTO user_profile (user_id, plan, grade_level, plan_expires_at) VALUES (?, COALESCE(?, "free"), ?, ?) ON CONFLICT(user_id) DO UPDATE SET plan=COALESCE(?, plan), grade_level=COALESCE(?, grade_level), plan_expires_at=COALESCE(?, plan_expires_at)')
             .bind(userId, body.plan ?? null, body.grade_level ?? null, body.plan_expires_at ?? null, body.plan ?? null, body.grade_level ?? null, body.plan_expires_at ?? null)
             .run();
         return NextResponse.json({ success: true });
@@ -23,7 +24,7 @@ export async function POST(request: Request) {
         console.error('设置用户档案错误:', error);
         return NextResponse.json({ success: false, error: '服务器内部错误' }, { status: 500 });
     }
-}
+});
 
 
 

@@ -33,6 +33,7 @@ export default function ResultPage() {
 
     const sub = data.submission;
     const answers = data.answers as Array<{ exam_question_id: number; score: number; is_auto_scored: number; }>
+    const correctCount = answers.filter(a => a.score > 0).length;
 
     return (
         <div className="container-page">
@@ -41,6 +42,7 @@ export default function ResultPage() {
                     <div className="card-body">
                         <h2 className="card-title">成绩</h2>
                         <div>总分：{sub.score_total}（自动：{sub.score_auto}，人工：{sub.score_manual}）</div>
+                        <div className="mt-1">对题数：{correctCount} / {(answers || []).length}</div>
                         <div className="mt-2">
                             状态：
                             <span className={`chip ml-1 ${sub.status === 'graded' ? 'chip-info' : sub.status === 'submitted' ? 'chip-info' : 'chip-muted'}`}>
@@ -60,6 +62,9 @@ export default function ResultPage() {
                             ))}
                         </ul>
                     </div>
+                </div>
+                <div className="text-right">
+                    <button className="btn" onClick={() => window.location.href = '/exams'}>返回我的考试</button>
                 </div>
             </div>
         </div>

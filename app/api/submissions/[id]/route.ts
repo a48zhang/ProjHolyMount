@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server';
 import { getAuthContext } from '@/lib/auth';
+import { withApiLogging } from '@/lib/logger';
 
 // 查看提交详情（学生看自己的；教师看自己创建试卷下的提交）
-export async function GET(request: Request) {
+export const GET = withApiLogging(async (request: Request) => {
     try {
         const ctx = await getAuthContext(request);
         const pathname = new URL(request.url).pathname;
@@ -36,5 +37,5 @@ export async function GET(request: Request) {
         console.error('获取提交详情错误:', error);
         return NextResponse.json({ success: false, error: '服务器内部错误' }, { status: 500 });
     }
-}
+});
 

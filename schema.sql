@@ -151,3 +151,20 @@ CREATE INDEX IF NOT EXISTS idx_exam_assignments_user ON exam_assignments(user_id
 CREATE INDEX IF NOT EXISTS idx_submissions_exam ON submissions(exam_id);
 CREATE INDEX IF NOT EXISTS idx_submissions_user ON submissions(user_id);
 CREATE INDEX IF NOT EXISTS idx_submission_answers_submission ON submission_answers(submission_id);
+
+-- API 错误日志（记录所有 5xx）
+CREATE TABLE IF NOT EXISTS api_error_logs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    method TEXT NOT NULL,
+    url TEXT NOT NULL,
+    status INTEGER NOT NULL,
+    user_agent TEXT,
+    ip TEXT,
+    referer TEXT,
+    error_message TEXT,
+    error_stack TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_api_error_logs_created_at ON api_error_logs(created_at);
+CREATE INDEX IF NOT EXISTS idx_api_error_logs_status ON api_error_logs(status);

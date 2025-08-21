@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'next/navigation';
-import { Card, Form, Input, InputNumber, Switch, Button, message, Table, Space } from 'antd';
+import { Card, Form, Input, InputNumber, Switch, Button, message, Table, Space, Modal } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { fetchJson, authHeaders } from '@/lib/http';
 
@@ -12,6 +12,9 @@ export default function EditExamPage() {
     const [form] = Form.useForm();
     const [loading, setLoading] = useState(true);
     const [rows, setRows] = useState<any[]>([]);
+    const [questionModalOpen, setQuestionModalOpen] = useState(false);
+    const [questionList, setQuestionList] = useState<any[]>([]);
+    const [selectedQuestionIds, setSelectedQuestionIds] = useState<number[]>([]);
 
     useEffect(() => {
         const token = localStorage.getItem('token');
@@ -44,6 +47,7 @@ export default function EditExamPage() {
                 description: v.description ?? null,
                 duration_minutes: v.duration_minutes ?? null,
                 randomize: !!v.randomize,
+                is_public: v.is_public ? 1 : 0,
                 required_plan: v.required_plan ?? null,
                 required_grade_level: v.required_grade_level ?? null,
             })
@@ -55,8 +59,71 @@ export default function EditExamPage() {
         { title: '序号', dataIndex: 'order_index', width: 90 },
         { title: '题目ID', dataIndex: 'question_id', width: 120 },
         { title: '类型', dataIndex: ['question', 'type'], width: 160 },
-        { title: '分值', dataIndex: 'points', width: 120 },
+        {
+            title: '分值', dataIndex: 'points', width: 120, render: (v, r, idx) => (
+                <InputNumber min={0} value={r.points} onChange={(val) => setRows(list => list.map((it, i) => i === idx ? { ...it, points: Number(val || 0) } : it))} />
+            )
+        },
+        {
+            title: '操作', key: 'op', width: 160, render: (_v, _r, idx) => (
+                <Space>
+                    <Button size="small" onClick={() => moveRow(idx, -1)} disabled={idx === 0}>上移</Button>
+                    <Button size="small" onClick={() => moveRow(idx, +1)} disabled={idx === rows.length - 1}>下移</Button>
+                    <Button size="small" danger onClick={() => removeRow(idx)}>移除</Button>
+                </Space>
+            )
+        },
     ];
+
+    const moveRow = (idx: number, delta: number) => {
+        setRows(list => {
+            const arr = [...list];
+            const ni = idx + delta;
+            if (ni < 0 || ni >= arr.length) return arr;
+            const [cur] = arr.splice(idx, 1);
+            arr.splice(ni, 0, cur);
+            return arr.map((it, i) => ({ ...it, order_index: i + 1 }));
+        });
+    };
+    const removeRow = (idx: number) => {
+        setRows(list => list.filter((_, i) => i !== idx).map((it, i) => ({ ...it, order_index: i + 1 })));
+    };
+
+    const openQuestionPicker = async () => {
+        const token = localStorage.getItem('token');
+        if (!token) return message.error('未登录');
+        setQuestionModalOpen(true);
+        const res = await fetchJson<any>(`/api/questions?limit=100&offset=0&includeContent=false`, { headers: authHeaders(token, false) });
+        if (res.success) setQuestionList(res.data || []);
+        else message.error(res.error || '加载题库失败');
+    };
+
+    const addSelectedQuestions = () => {
+        if (selectedQuestionIds.length === 0) { setQuestionModalOpen(false); return; }
+        setRows(list => {
+            const exists = new Set(list.map(it => it.question_id));
+            const toAdd = questionList.filter((q: any) => selectedQuestionIds.includes(q.id) && !exists.has(q.id));
+            const start = list.length;
+            const appended = toAdd.map((q: any, i: number) => ({
+                exam_question_id: `new-${q.id}`,
+                order_index: start + i + 1,
+                points: 1,
+                question_id: q.id,
+                question: { id: q.id, type: q.type, schema_version: q.schema_version },
+            }));
+            return [...list, ...appended];
+        });
+        setQuestionModalOpen(false);
+        setSelectedQuestionIds([]);
+    };
+
+    const saveExamQuestions = async () => {
+        const token = localStorage.getItem('token');
+        if (!token) return message.error('未登录');
+        const items = rows.map((r, i) => ({ question_id: r.question_id, order_index: i + 1, points: Number(r.points || 0) }));
+        const res = await fetchJson<any>(`/api/exams/${examId}/questions/bulk`, { method: 'POST', headers: authHeaders(token), body: JSON.stringify({ items }) });
+        if (res.success) message.success('已保存题目设置'); else message.error(res.error || '保存失败');
+    };
 
     return (
         <div className="container-page">
@@ -68,8 +135,14 @@ export default function EditExamPage() {
                         <Form.Item name="description" label="描述"><Input.TextArea rows={3} /></Form.Item>
                         <Form.Item name="duration_minutes" label="时长（分钟）"><InputNumber min={0} className="w-full" /></Form.Item>
                         <Form.Item name="randomize" label="题目乱序" valuePropName="checked"><Switch /></Form.Item>
+                        <Form.Item name="is_public" label="公开试卷" valuePropName="checked"><Switch /></Form.Item>
+                        <Form.Item name="required_plan" label="套餐要求"><Input placeholder="free/premium 或留空" /></Form.Item>
+                        <Form.Item name="required_grade_level" label="学段要求"><Input placeholder="如 primary/junior/senior/college 或留空" /></Form.Item>
                         <Space>
-                            <Button type="primary" onClick={saveDraft}>保存</Button>
+                            <Button type="primary" onClick={saveDraft}>保存基本信息</Button>
+                            <Button onClick={openQuestionPicker}>添加题目</Button>
+                            <Button onClick={saveExamQuestions}>保存题目设置</Button>
+                            <Button onClick={() => window.open(`/teacher/exams/${examId}/preview`, '_blank')}>学生视图预览</Button>
                         </Space>
                     </Form>
                 </div></div>
@@ -78,6 +151,27 @@ export default function EditExamPage() {
                     <h2 className="card-title">题目列表</h2>
                     <Table rowKey="exam_question_id" columns={columns} dataSource={rows} pagination={false} />
                 </div></div>
+
+                <Modal open={questionModalOpen} width={800} onCancel={() => setQuestionModalOpen(false)} onOk={addSelectedQuestions} okText="添加所选">
+                    <div className="space-y-2">
+                        <div className="text-sm">从你的题库选择要加入本试卷的题目：</div>
+                        <Table
+                            rowKey="id"
+                            dataSource={questionList}
+                            pagination={{ pageSize: 10 }}
+                            rowSelection={{
+                                selectedRowKeys: selectedQuestionIds,
+                                onChange: (keys) => setSelectedQuestionIds(keys as number[]),
+                            }}
+                            columns={[
+                                { title: 'ID', dataIndex: 'id', width: 100 },
+                                { title: '类型', dataIndex: 'type', width: 160 },
+                                { title: '版本', dataIndex: 'schema_version', width: 120 },
+                                { title: '创建时间', dataIndex: 'created_at' },
+                            ]}
+                        />
+                    </div>
+                </Modal>
             </div>
         </div>
     );

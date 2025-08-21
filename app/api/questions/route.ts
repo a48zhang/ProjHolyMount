@@ -1,25 +1,19 @@
 import { NextResponse } from 'next/server';
 import { getAuthContext, requireRole } from '@/lib/auth';
+import type { AuthContext } from '@/lib/auth';
+import { withApiLogging } from '@/lib/logger';
 
 // 创建题目
-export async function POST(request: Request) {
+export async function createQuestionWithContext(
+    ctx: AuthContext,
+    body: { type: string; content_json: unknown; answer_key_json?: unknown; rubric_json?: unknown; schema_version?: number }
+) {
     try {
-        const ctx = await getAuthContext(request);
         requireRole(ctx, ['teacher', 'admin']);
-
-        const body = await request.json();
-        const { type, content_json, answer_key_json, rubric_json, schema_version = 1 } = body as {
-            type: string;
-            content_json: unknown;
-            answer_key_json?: unknown;
-            rubric_json?: unknown;
-            schema_version?: number;
-        };
-
+        const { type, content_json, answer_key_json, rubric_json, schema_version = 1 } = body;
         if (!type || !content_json) {
             return NextResponse.json({ success: false, error: '缺少题型或内容' }, { status: 400 });
         }
-
         await ctx.env.DB
             .prepare(
                 `INSERT INTO questions (author_id, type, schema_version, content_json, answer_key_json, rubric_json, is_active, created_at, updated_at)
@@ -34,12 +28,10 @@ export async function POST(request: Request) {
                 rubric_json ? JSON.stringify(rubric_json) : null
             )
             .run();
-
         const created = await ctx.env.DB
             .prepare('SELECT id FROM questions WHERE author_id = ? ORDER BY id DESC LIMIT 1')
             .bind(ctx.userId)
             .first<{ id: number }>();
-
         return NextResponse.json({ success: true, data: { id: created?.id } });
     } catch (error) {
         console.error('创建题目错误:', error);
@@ -47,8 +39,14 @@ export async function POST(request: Request) {
     }
 }
 
+export const POST = withApiLogging(async (request: Request) => {
+    const ctx = await getAuthContext(request);
+    const body = (await request.json()) as any;
+    return createQuestionWithContext(ctx, body);
+});
+
 // 列表题目（仅作者可见自己的题，admin 可见全部）
-export async function GET(request: Request) {
+export const GET = withApiLogging(async (request: Request) => {
     try {
         const ctx = await getAuthContext(request);
         requireRole(ctx, ['teacher', 'admin']);
@@ -89,5 +87,5 @@ export async function GET(request: Request) {
         console.error('获取题目列表错误:', error);
         return NextResponse.json({ success: false, error: '服务器内部错误' }, { status: 500 });
     }
-}
+});
 

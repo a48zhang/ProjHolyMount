@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getCloudflareContext } from '@opennextjs/cloudflare';
 import jwt from 'jsonwebtoken';
 import { getAuthContext } from '@/lib/auth';
+import { withApiLogging } from '@/lib/logger';
 
-export async function GET(request: NextRequest) {
+export const GET = withApiLogging(async (request: NextRequest) => {
   try {
     const { env } = await getCloudflareContext();
 
@@ -75,4 +76,4 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+});

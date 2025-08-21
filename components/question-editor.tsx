@@ -50,7 +50,9 @@ function QuestionEditor({
             setText(value.content?.text ?? '');
             const blanksLen: number = Array.isArray(value.content?.blanks) ? value.content.blanks.length : 1;
             setBlankCount(Math.max(1, blanksLen));
-            const keys: string[] = Array.isArray(value.answerKey) ? value.answerKey : Array.from({ length: blanksLen || 1 }, () => '');
+            const keysRaw: any[] = Array.isArray(value.answerKey) ? value.answerKey : [];
+            const keys: string[] = (keysRaw.length ? keysRaw : Array.from({ length: blanksLen || 1 }, () => ''))
+                .map((k: any) => Array.isArray(k) ? (k as any[]).map(s => String(s || '').trim()).filter(Boolean).join(' | ') : String(k || ''));
             setBlankKeys(keys.length ? keys : Array.from({ length: blanksLen || 1 }, () => ''));
         } else if (type === 'short_answer' || type === 'essay') {
             setPrompt(value.content?.prompt ?? '');
@@ -80,7 +82,14 @@ function QuestionEditor({
         } else if (type === 'multiple_choice') {
             onChange({ content: { stem, options }, answerKey: multiKey });
         } else if (type === 'fill_blank') {
-            onChange({ content: { text, blanks: Array.from({ length: blankCount }) }, answerKey: blankKeys.slice(0, blankCount) });
+            const normalizedKeys = blankKeys.slice(0, blankCount).map((k) => {
+                const parts = String(k ?? '')
+                    .split('|')
+                    .map(s => s.trim())
+                    .filter(Boolean);
+                return parts.length <= 1 ? (parts[0] ?? '') : parts;
+            });
+            onChange({ content: { text, blanks: Array.from({ length: blankCount }) }, answerKey: normalizedKeys });
         } else if (type === 'short_answer' || type === 'essay') {
             onChange({ content: { prompt } });
         }
@@ -159,10 +168,10 @@ function QuestionEditor({
                     <div className="mb-1">空格数量</div>
                     <InputNumber min={1} max={20} value={blankCount} onChange={v => setBlankCount(Number(v) || 1)} />
                 </div>
-                <Divider orientation="left">每空参考答案（可留空）</Divider>
+                <Divider orientation="left">每空参考答案（可留空；多个同义答案用 | 分隔）</Divider>
                 <Space direction="vertical" style={{ width: '100%' }}>
                     {Array.from({ length: blankCount }).map((_, i) => (
-                        <Input key={i} value={blankKeys[i] || ''} placeholder={`第 ${i + 1} 空参考答案`} onChange={e => setBlankKeys(prev => prev.map((v, idx) => (idx === i ? e.target.value : v)))} />
+                        <Input key={i} value={blankKeys[i] || ''} placeholder={`第 ${i + 1} 空参考答案（如：答案A | 答案B）`} onChange={e => setBlankKeys(prev => prev.map((v, idx) => (idx === i ? e.target.value : v)))} />
                     ))}
                 </Space>
             </div>

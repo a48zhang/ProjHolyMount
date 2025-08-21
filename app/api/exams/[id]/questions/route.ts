@@ -1,16 +1,12 @@
 import { NextResponse } from 'next/server';
 import { getAuthContext } from '@/lib/auth';
+import type { AuthContext } from '@/lib/auth';
+import { withApiLogging } from '@/lib/logger';
 
 // 教师/管理员：查看试卷已挂题目（含 content，不返回答案）
-export async function GET(request: Request) {
+export async function listExamQuestionsWithContext(ctx: AuthContext, examId: number) {
     try {
-        const ctx = await getAuthContext(request);
-        const pathname = new URL(request.url).pathname;
-        const parts = pathname.split('/');
-        const idx = parts.findIndex(p => p === 'exams');
-        const examId = idx >= 0 && parts[idx + 1] ? Number(parts[idx + 1]) : NaN;
         if (!Number.isFinite(examId)) return NextResponse.json({ success: false, error: '参数错误' }, { status: 400 });
-
         const own = await ctx.env.DB.prepare('SELECT author_id FROM exams WHERE id = ?').bind(examId).first<{ author_id: number }>();
         if (!own) return NextResponse.json({ success: false, error: '试卷不存在' }, { status: 404 });
         const isAuthor = own.author_id === ctx.userId || ctx.role === 'admin';
@@ -48,6 +44,15 @@ export async function GET(request: Request) {
         return NextResponse.json({ success: false, error: '服务器内部错误' }, { status: 500 });
     }
 }
+
+export const GET = withApiLogging(async (request: Request) => {
+    const ctx = await getAuthContext(request);
+    const pathname = new URL(request.url).pathname;
+    const parts = pathname.split('/');
+    const idx = parts.findIndex(p => p === 'exams');
+    const examId = idx >= 0 && parts[idx + 1] ? Number(parts[idx + 1]) : NaN;
+    return listExamQuestionsWithContext(ctx, examId);
+});
 
 
 

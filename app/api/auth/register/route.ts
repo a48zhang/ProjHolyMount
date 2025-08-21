@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCloudflareContext } from '@opennextjs/cloudflare';
 import bcrypt from 'bcryptjs';
+import { withApiLogging } from '@/lib/logger';
 
 interface RegisterRequest {
   username: string;
@@ -9,7 +10,7 @@ interface RegisterRequest {
   display_name?: string;
 }
 
-export async function POST(request: NextRequest) {
+export const POST = withApiLogging(async (request: NextRequest) => {
   try {
     const { env } = await getCloudflareContext();
     const body: RegisterRequest = await request.json();
@@ -157,4 +158,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+});

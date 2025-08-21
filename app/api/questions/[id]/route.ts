@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server';
 import { getAuthContext, requireRole, requireExamAuthor } from '@/lib/auth';
+import { withApiLogging } from '@/lib/logger';
 
 // 获取题目详情（作者或admin）
-export async function GET(_request: Request) {
+export const GET = withApiLogging(async (_request: Request) => {
     try {
         const ctx = await getAuthContext(_request);
         requireRole(ctx, ['teacher', 'admin']);
@@ -30,10 +31,10 @@ export async function GET(_request: Request) {
         console.error('获取题目详情错误:', error);
         return NextResponse.json({ success: false, error: '服务器内部错误' }, { status: 500 });
     }
-}
+});
 
 // 更新题目（作者或admin）
-export async function PATCH(request: Request) {
+export const PATCH = withApiLogging(async (request: Request) => {
     try {
         const ctx = await getAuthContext(request);
         requireRole(ctx, ['teacher', 'admin']);
@@ -76,10 +77,10 @@ export async function PATCH(request: Request) {
         console.error('更新题目错误:', error);
         return NextResponse.json({ success: false, error: '服务器内部错误' }, { status: 500 });
     }
-}
+});
 
 // 删除题目（软删：is_active=0）
-export async function DELETE(_request: Request) {
+export const DELETE = withApiLogging(async (_request: Request) => {
     try {
         const ctx = await getAuthContext(_request);
         requireRole(ctx, ['teacher', 'admin']);
@@ -105,5 +106,5 @@ export async function DELETE(_request: Request) {
         console.error('删除题目错误:', error);
         return NextResponse.json({ success: false, error: '服务器内部错误' }, { status: 500 });
     }
-}
+});
 

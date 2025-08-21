@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server';
 import { getAuthContext } from '@/lib/auth';
+import { withApiLogging } from '@/lib/logger';
 
 type Role = 'student' | 'teacher' | 'admin';
 
-export async function PATCH(request: Request) {
+export const PATCH = withApiLogging(async (request: Request) => {
     const ctx = await getAuthContext(request);
     const body = (await request.json()) as { role?: Role };
     const role = body.role;
@@ -20,6 +21,6 @@ export async function PATCH(request: Request) {
         .bind(ctx.userId, role)
         .run();
     return NextResponse.json({ success: true });
-}
+});
 
 

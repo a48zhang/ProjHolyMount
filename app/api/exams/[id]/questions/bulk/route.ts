@@ -1,15 +1,15 @@
 import { NextResponse } from 'next/server';
 import { getAuthContext } from '@/lib/auth';
+import type { AuthContext } from '@/lib/auth';
+import { withApiLogging } from '@/lib/logger';
 
-export async function POST(request: Request) {
+export async function setExamQuestionsWithContext(
+    ctx: AuthContext,
+    examId: number,
+    items: Array<{ question_id: number; order_index: number; points: number }>
+) {
     try {
-        const ctx = await getAuthContext(request);
-        const pathname = new URL(request.url).pathname;
-        const parts = pathname.split('/');
-        const idx = parts.findIndex(p => p === 'exams');
-        const examId = idx >= 0 && parts[idx + 1] ? Number(parts[idx + 1]) : NaN;
         if (!Number.isFinite(examId)) return NextResponse.json({ success: false, error: '参数错误' }, { status: 400 });
-
         const own = await ctx.env.DB
             .prepare('SELECT author_id, status FROM exams WHERE id = ?')
             .bind(examId)
@@ -18,8 +18,6 @@ export async function POST(request: Request) {
         if (own.author_id !== ctx.userId && ctx.role !== 'admin') return NextResponse.json({ success: false, error: '无权操作' }, { status: 403 });
         if (own.status !== 'draft') return NextResponse.json({ success: false, error: '仅草稿可编辑题目' }, { status: 400 });
 
-        const body = await request.json();
-        const { items } = body as { items: Array<{ question_id: number; order_index: number; points: number }> };
         if (!Array.isArray(items) || items.length === 0) return NextResponse.json({ success: false, error: '缺少题目列表' }, { status: 400 });
 
         // 清空现有关联
@@ -42,4 +40,15 @@ export async function POST(request: Request) {
         return NextResponse.json({ success: false, error: '服务器内部错误' }, { status: 500 });
     }
 }
+
+export const POST = withApiLogging(async (request: Request) => {
+    const ctx = await getAuthContext(request);
+    const pathname = new URL(request.url).pathname;
+    const parts = pathname.split('/');
+    const idx = parts.findIndex(p => p === 'exams');
+    const examId = idx >= 0 && parts[idx + 1] ? Number(parts[idx + 1]) : NaN;
+    const body = await request.json();
+    const { items } = body as { items: Array<{ question_id: number; order_index: number; points: number }> };
+    return setExamQuestionsWithContext(ctx, examId, items);
+});
 
