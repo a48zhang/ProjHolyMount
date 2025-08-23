@@ -28,6 +28,7 @@ function QuestionEditor({
     const [blankCount, setBlankCount] = useState<number>(1);
     const [blankKeys, setBlankKeys] = useState<string[]>(() => ['']);
     const [prompt, setPrompt] = useState<string>('');
+    const [referenceAnswer, setReferenceAnswer] = useState<string>('');
     const [images, setImages] = useState<string[]>([]);
 
     const syncingRef = useRef(false);
@@ -58,6 +59,7 @@ function QuestionEditor({
             setBlankKeys(keys.length ? keys : Array.from({ length: blanksLen || 1 }, () => ''));
         } else if (type === 'short_answer' || type === 'essay') {
             setPrompt(value.content?.prompt ?? '');
+            setReferenceAnswer(typeof value.answerKey === 'string' ? value.answerKey : '');
         }
     }, [type, value]);
 
@@ -93,9 +95,9 @@ function QuestionEditor({
             });
             onChange({ content: { text, images, blanks: Array.from({ length: blankCount }) }, answerKey: normalizedKeys });
         } else if (type === 'short_answer' || type === 'essay') {
-            onChange({ content: { prompt, images } });
+            onChange({ content: { prompt, images }, answerKey: referenceAnswer });
         }
-    }, [type, stem, options, singleKey, multiKey, text, blankCount, blankKeys, prompt, onChange, images]);
+    }, [type, stem, options, singleKey, multiKey, text, blankCount, blankKeys, prompt, onChange, images, referenceAnswer]);
     const uploadProps: UploadProps = {
         multiple: true,
         accept: 'image/*',
@@ -216,6 +218,10 @@ function QuestionEditor({
                 <Upload {...uploadProps} listType="picture" maxCount={8}>
                     <Button>添加图片</Button>
                 </Upload>
+                <div>
+                    <div className="mb-1">参考答案（可选）</div>
+                    <Input.TextArea value={referenceAnswer} onChange={e => setReferenceAnswer(e.target.value)} autoSize={{ minRows: 2 }} placeholder="请输入参考答案（展示给学生用于对照）" />
+                </div>
             </div>
         );
     }

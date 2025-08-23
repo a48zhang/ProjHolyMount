@@ -1,7 +1,4 @@
 import { NextResponse } from 'next/server';
-import { getAuthContext } from '@/lib/auth';
-import type { AuthContext } from '@/lib/auth';
-import { withApiLogging } from '@/lib/logger';
 
 // 获取试卷可作答内容（题目列表及分值）。
 // 学生：仅可在被分配且发布窗口内访问，且不返回答案；
@@ -11,25 +8,26 @@ export async function getExamPaperWithContext(ctx: AuthContext, examId: number, 
         if (!Number.isFinite(examId)) return NextResponse.json({ success: false, error: '参数错误' }, { status: 400 });
 
         // 权限校验
-        let canView = false;
         let isAuthor = false;
         if (ctx.role === 'teacher' || ctx.role === 'admin') {
-            const own = await ctx.env.DB
-                .prepare('SELECT author_id FROM exams WHERE id = ?')
-                .bind(examId)
-                .first<{ author_id: number }>();
-            if (!own) return NextResponse.json({ success: false, error: '试卷不存在' }, { status: 404 });
-            isAuthor = own.author_id === ctx.userId || ctx.role === 'admin';
-            canView = isAuthor;
+            isAuthor = exam.author_id === ctx.userId || ctx.role === 'admin';
+            if (!isAuthor) return NextResponse.json({ success: false, error: '无权访问' }, { status: 403 });
         } else {
-            // 学生需已分配
+            // 学生需已分配且在时间窗口内
             const assigned = await ctx.env.DB
                 .prepare('SELECT 1 FROM exam_assignments WHERE exam_id = ? AND user_id = ?')
                 .bind(examId, ctx.userId)
                 .first<{ 1: number }>();
-            canView = !!assigned;
+            if (!assigned) return NextResponse.json({ success: false, error: '无权访问' }, { status: 403 });
+            if (exam.status !== 'published') return NextResponse.json({ success: false, error: '试卷未发布' }, { status: 400 });
+            const now = Date.now();
+            const startOk = !exam.start_at || now >= Date.parse(exam.start_at);
+            const endOk = !exam.end_at || now <= Date.parse(exam.end_at);
+            if (!startOk || !endOk) return NextResponse.json({ success: false, error: '不在考试时间窗口内' }, { status: 400 });
+            // 套餐/学段要求
+            ensurePlan(ctx, exam.required_plan);
+            ensureGrade(ctx, exam.required_grade_level);
         }
-        if (!canView) return NextResponse.json({ success: false, error: '无权访问' }, { status: 403 });
 
         // 拉取题目与分值
         const rows = await ctx.env.DB
@@ -60,18 +58,6 @@ export async function getExamPaperWithContext(ctx: AuthContext, examId: number, 
             },
         }));
 
-        // 随机出题：当考试设置 randomize=1 且当前为学生作答视图时对每个学生稳定乱序
-        if (!isAuthor) {
-            const exam = await ctx.env.DB
-                .prepare('SELECT randomize FROM exams WHERE id = ?')
-                .bind(examId)
-                .first<{ randomize: number }>();
-            if (exam && exam.randomize) {
-                // 稳定乱序：使用 userId 作为种子，打乱但同一学生每次一致
-                const seed = ctx.userId;
-                let s = Number(seed) || 1;
-                const rand = () => { s ^= s << 13; s ^= s >>> 17; s ^= s << 5; return Math.abs(s) / 0x7fffffff; };
-                items = [...items].sort(() => rand() - 0.5);
             }
         }
 

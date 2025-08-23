@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button, Space, Modal, Form, Input, message, Select, Tag, Card, Typography, Avatar, Statistic, Row, Col, Divider, Spin, Result } from 'antd';
 import { UserOutlined, BookOutlined, TrophyOutlined, CalendarOutlined, EditOutlined, TeamOutlined } from '@ant-design/icons';
@@ -23,7 +23,7 @@ interface User {
   grade_level?: string | null;
 }
 
-export default function Dashboard() {
+function DashboardContent() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -367,21 +367,6 @@ export default function Dashboard() {
             </Card>
 
             {/* 推荐考试列表 */}
-            <Card 
-              title="推荐考试"
-              extra={
-                <Button 
-                  type="link" 
-                  onClick={() => router.push('/exams?list=public')}
-                >
-                  查看全部公开考试
-                </Button>
-              }
-            >
-              <RecommendedExams />
-            </Card>
-          </Col>
-        </Row>
       </div>
       <Modal
         open={editOpen}
@@ -486,5 +471,13 @@ function RecommendedExams() {
         </Card>
       ))}
     </Space>
+  );
+}
+
+export default function Dashboard() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-gray-50 flex items-center justify-center"><div className="text-lg">加载中...</div></div>}>
+      <DashboardContent />
+    </Suspense>
   );
 }

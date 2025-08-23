@@ -13,7 +13,7 @@ export const GET = withApiLogging(async (request: Request) => {
         if (!Number.isFinite(submissionId)) return NextResponse.json({ success: false, error: '参数错误' }, { status: 400 });
 
         const sub = await ctx.env.DB
-            .prepare('SELECT s.*, e.author_id FROM submissions s JOIN exams e ON e.id = s.exam_id WHERE s.id = ?')
+            .prepare('SELECT s.*, e.author_id, e.randomize FROM submissions s JOIN exams e ON e.id = s.exam_id WHERE s.id = ?')
             .bind(submissionId)
             .first<any>();
         if (!sub) return NextResponse.json({ success: false, error: '提交不存在' }, { status: 404 });
@@ -32,7 +32,27 @@ export const GET = withApiLogging(async (request: Request) => {
             r.answer_json = r.answer_json ? JSON.parse(r.answer_json) : null;
         }
 
-        return NextResponse.json({ success: true, data: { submission: sub, answers: answers.results || [] } });
+        // 题面与标准答案（学生仅在提交后可见；教师/管理员可见）
+        const canViewAnswers = (ctx.userId === sub.user_id && (sub.status === 'submitted' || sub.status === 'graded')) || ctx.userId === sub.author_id || ctx.role === 'admin';
+        const eqs = await ctx.env.DB
+            .prepare(`SELECT eq.id as exam_question_id, eq.points, q.id as question_id, q.type, q.schema_version, q.content_json, q.answer_key_json
+                      FROM exam_questions eq JOIN questions q ON q.id = eq.question_id
+                      WHERE eq.exam_id = ? ORDER BY eq.order_index ASC`)
+            .bind(sub.exam_id)
+            .all<any>();
+        const paper = (eqs.results || []).map((r: any) => ({
+            exam_question_id: r.exam_question_id,
+            points: r.points,
+            question: {
+                id: r.question_id,
+                type: r.type,
+                schema_version: r.schema_version,
+                content: r.content_json ? JSON.parse(r.content_json) : null,
+                answer_key: canViewAnswers ? (r.answer_key_json ? JSON.parse(r.answer_key_json) : null) : undefined,
+            },
+        }));
+
+        return NextResponse.json({ success: true, data: { submission: sub, answers: answers.results || [], paper } });
     } catch (error) {
         console.error('获取提交详情错误:', error);
         return NextResponse.json({ success: false, error: '服务器内部错误' }, { status: 500 });
