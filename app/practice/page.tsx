@@ -1,9 +1,11 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
-import { message } from 'antd';
+import { useEffect, useState } from 'react';
+import { message, Select, Button, Card, Space, Typography, Tag, Spin, Result, Row, Col, Radio, Checkbox, Input } from 'antd';
+import { BookOutlined, ReloadOutlined, CheckOutlined, CloseOutlined } from '@ant-design/icons';
 import PageHeader from '@/components/page-header';
-import EmptyState from '@/components/empty-state';
+
+const { Title, Text, Paragraph } = Typography;
 
 type PracticeItem = {
     question_id: number;
@@ -11,6 +13,14 @@ type PracticeItem = {
     schema_version: number;
     content: any;
 };
+
+const QUESTION_TYPES = [
+    { value: 'single_choice', label: '单选题' },
+    { value: 'multiple_choice', label: '多选题' },
+    { value: 'fill_blank', label: '填空题' },
+    { value: 'short_answer', label: '简答题' },
+    { value: 'essay', label: '论述题' },
+];
 
 export default function PracticePage() {
     const [items, setItems] = useState<PracticeItem[]>([]);
@@ -23,6 +33,8 @@ export default function PracticePage() {
         total: number;
     }>(null);
     const [lastParams, setLastParams] = useState<{ count: number; type?: string | null }>({ count: 10 });
+    const [questionType, setQuestionType] = useState<string | null>(null);
+    const [questionCount, setQuestionCount] = useState<number>(10);
 
     useEffect(() => {
         const token = localStorage.getItem('token');
@@ -30,210 +42,434 @@ export default function PracticePage() {
             window.location.href = '/';
             return;
         }
-        (async () => {
-            try {
-                const qs = new URLSearchParams();
-                qs.set('count', String(lastParams.count || 10));
-                if (lastParams.type) qs.set('type', lastParams.type);
-                const r = await fetch(`/api/practice/paper?${qs.toString()}`, { headers: { Authorization: `Bearer ${token}` } });
-                const j: any = await r.json();
-                if (!j.success) throw new Error(j.error || '获取失败');
-                setItems(j.data.items || []);
-            } catch (e: any) {
-                message.error(e.message || '加载失败');
-            } finally {
-                setLoading(false);
-            }
-        })();
+        fetchPracticeQuestions();
     }, [lastParams]);
+
+    const fetchPracticeQuestions = async () => {
+        const token = localStorage.getItem('token');
+        if (!token) return;
+        
+        setLoading(true);
+        try {
+            const qs = new URLSearchParams();
+            qs.set('count', String(lastParams.count || 10));
+            if (lastParams.type) qs.set('type', lastParams.type);
+            
+            const response = await fetch(`/api/practice/paper?${qs.toString()}`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            const data = await response.json();
+            
+            if (!data.success) throw new Error(data.error || '获取失败');
+            setItems(data.data.items || []);
+        } catch (error: any) {
+            message.error(error.message || '加载失败');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const startPractice = () => {
+        setLastParams({ count: questionCount, type: questionType });
+        setResult(null);
+        setAnswers({});
+    };
 
     const submit = async () => {
         const token = localStorage.getItem('token');
-        if (!token) return;
-        if (submitting) return;
+        if (!token || submitting) return;
+        
         setSubmitting(true);
         try {
             const payload = {
                 items: items.map(it => ({ question_id: it.question_id, answer: answers[it.question_id] }))
             };
-            const r = await fetch('/api/practice/submit', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify(payload) });
-            const j: any = await r.json();
-            if (!j.success) throw new Error(j.error || '提交失败');
-            setResult(j.data);
-        } catch (e: any) {
-            message.error(e.message || '提交失败');
+            
+            const response = await fetch('/api/practice/submit', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`
+                },
+                body: JSON.stringify(payload)
+            });
+            
+            const data = await response.json();
+            if (!data.success) throw new Error(data.error || '提交失败');
+            setResult(data.data);
+        } catch (error: any) {
+            message.error(error.message || '提交失败');
         } finally {
             setSubmitting(false);
         }
     };
 
-    if (loading) return <div className="container-page"><div className="container-inner"><div className="card"><div className="card-body">加载中...</div></div></div></div>;
+    const getTypeLabel = (type: string) => {
+        const typeMap: Record<string, string> = {
+            'single_choice': '单选题',
+            'multiple_choice': '多选题',
+            'fill_blank': '填空题',
+            'short_answer': '简答题',
+            'essay': '论述题'
+        };
+        return typeMap[type] || type;
+    };
+
+    const getTypeColor = (type: string) => {
+        const colorMap: Record<string, string> = {
+            'single_choice': 'blue',
+            'multiple_choice': 'green',
+            'fill_blank': 'orange',
+            'short_answer': 'purple',
+            'essay': 'red'
+        };
+        return colorMap[type] || 'default';
+    };
+
+    if (loading) {
+        return (
+            <div className="container-page">
+                <Spin size="large" className="flex justify-center items-center h-64" />
+            </div>
+        );
+    }
 
     return (
         <div className="container-page">
-            <PageHeader title="随时练习" />
-            <div className="container-inner max-w-3xl space-y-4">
+            <PageHeader title="题库练习" />
+            <div className="container-inner max-w-4xl space-y-6">
                 {!result ? (
                     <>
-                        <div className="space-y-4">
-                            {items.map((it, idx) => (
-                                <div key={it.question_id} className="card">
-                                    <div className="card-body">
-                                        <div className="text-sm muted mb-2">第 {idx + 1} 题 · {it.type}</div>
-                                        <QuestionEditor item={it} value={answers[it.question_id]} onChange={v => setAnswers(prev => ({ ...prev, [it.question_id]: v }))} />
-                                    </div>
+                        <Card className="mb-6">
+                            <div className="text-center mb-4">
+                                <BookOutlined className="text-4xl text-blue-500 mb-2" />
+                                <Title level={3}>题库练习</Title>
+                                <Paragraph type="secondary">
+                                    随时随地练习题目，提升你的知识水平
+                                </Paragraph>
+                            </div>
+                            <div className="space-y-4">
+                                <Row gutter={16}>
+                                    <Col xs={24} sm={12}>
+                                        <div>
+                                            <Text className="block mb-2">题目类型</Text>
+                                            <Select
+                                                placeholder="全部题型"
+                                                allowClear
+                                                style={{ width: '100%' }}
+                                                value={questionType}
+                                                onChange={setQuestionType}
+                                                options={QUESTION_TYPES}
+                                            />
+                                        </div>
+                                    </Col>
+                                    <Col xs={24} sm={12}>
+                                        <div>
+                                            <Text className="block mb-2">题目数量</Text>
+                                            <Select
+                                                style={{ width: '100%' }}
+                                                value={questionCount}
+                                                onChange={setQuestionCount}
+                                                options={[
+                                                    { value: 5, label: '5题' },
+                                                    { value: 10, label: '10题' },
+                                                    { value: 15, label: '15题' },
+                                                    { value: 20, label: '20题' },
+                                                ]}
+                                            />
+                                        </div>
+                                    </Col>
+                                </Row>
+                                <div className="text-center">
+                                    <Button type="primary" size="large" onClick={startPractice} icon={<ReloadOutlined />}>
+                                        开始练习
+                                    </Button>
                                 </div>
-                            ))}
-                        </div>
-                        <div className="pt-2">
-                            <button className="btn btn-primary" onClick={submit} disabled={submitting}>交卷并查看答案</button>
-                        </div>
-                        <div className="pt-1 text-sm muted">共 {items.length} 题</div>
+                            </div>
+                        </Card>
+
+                        {items.length > 0 && (
+                            <>
+                                <div className="space-y-4">
+                                    {items.map((item, index) => (
+                                        <Card key={item.question_id}>
+                                            <div className="card-body">
+                                                <div className="flex items-center gap-3 mb-3">
+                                                    <span className="text-sm text-gray-600">第 {index + 1} 题</span>
+                                                    <Tag color={getTypeColor(item.type)}>{getTypeLabel(item.type)}</Tag>
+                                                </div>
+                                                <QuestionRenderer 
+                                                    item={item} 
+                                                    value={answers[item.question_id]} 
+                                                    onChange={(v: any) => setAnswers(prev => ({ ...prev, [item.question_id]: v }))} 
+                                                />
+                                            </div>
+                                        </Card>
+                                    ))}
+                                </div>
+                                <div className="flex justify-center">
+                                    <Button 
+                                        type="primary" 
+                                        size="large" 
+                                        onClick={submit} 
+                                        loading={submitting}
+                                        disabled={items.length === 0}
+                                    >
+                                        提交答案
+                                    </Button>
+                                </div>
+                            </>
+                        )}
                     </>
                 ) : (
-                    <ResultView items={items} result={result} onRetrySame={() => { setResult(null); setAnswers({}); setLastParams(p => ({ ...p })); }} onRetryWrong={() => {
-                        const wrongIds = new Set((result?.results || []).filter(r => !r.correct).map(r => r.question_id));
-                        const filtered = items.filter(it => wrongIds.has(it.question_id));
-                        setItems(filtered);
-                        setAnswers({});
-                        setResult(null);
-                    }} />
+                    <ResultView 
+                        items={items} 
+                        result={result} 
+                        onRetrySame={() => {
+                            setResult(null);
+                            setAnswers({});
+                            fetchPracticeQuestions();
+                        }} 
+                        onRetryWrong={() => {
+                            const wrongIds = new Set(result.results.filter(r => !r.correct).map(r => r.question_id));
+                            const filtered = items.filter(it => wrongIds.has(it.question_id));
+                            setItems(filtered);
+                            setAnswers({});
+                            setResult(null);
+                        }}
+                    />
                 )}
             </div>
         </div>
     );
 }
 
-function QuestionEditor({ item, value, onChange }: { item: PracticeItem; value: any; onChange: (v: any) => void }) {
-    const q = item;
-    if (q.type === 'single_choice') {
-        const options: string[] = q.content?.options || [];
+function QuestionRenderer({ item, value, onChange }: { item: PracticeItem; value: any; onChange: (v: any) => void }) {
+    const { type, content } = item;
+    
+    if (type === 'single_choice') {
+        const options: string[] = content?.options || [];
         return (
-            <div className="space-y-2">
-                <div>{q.content?.stem}</div>
-                <div className="space-y-1">
-                    {options.map((op: string, i: number) => (
-                        <label key={i} className="block">
-                            <input type="radio" name={`q-${q.question_id}`} checked={value === i} onChange={() => onChange(i)} /> {op}
-                        </label>
+            <div className="space-y-3">
+                <div className="font-medium">{content?.stem}</div>
+                <Radio.Group 
+                    value={value} 
+                    onChange={(e) => onChange(e.target.value)}
+                    className="space-y-2"
+                >
+                    {options.map((option, index) => (
+                        <Radio key={index} value={index}>
+                            {option}
+                        </Radio>
                     ))}
-                </div>
+                </Radio.Group>
             </div>
         );
     }
-    if (q.type === 'multiple_choice') {
-        const options: string[] = q.content?.options || [];
-        const cur: number[] = Array.isArray(value) ? value : [];
-        const toggle = (i: number) => {
-            const set = new Set(cur);
-            if (set.has(i)) set.delete(i); else set.add(i);
-            onChange(Array.from(set).sort((a, b) => a - b));
+    
+    if (type === 'multiple_choice') {
+        const options: string[] = content?.options || [];
+        const currentValues: number[] = Array.isArray(value) ? value : [];
+        
+        const handleChange = (checkedValue: number) => {
+            const newValues = currentValues.includes(checkedValue)
+                ? currentValues.filter(v => v !== checkedValue)
+                : [...currentValues, checkedValue];
+            onChange(newValues.sort((a, b) => a - b));
         };
+        
         return (
-            <div className="space-y-2">
-                <div>{q.content?.stem}</div>
-                <div className="space-y-1">
-                    {options.map((op: string, i: number) => (
-                        <label key={i} className="block">
-                            <input type="checkbox" checked={cur.includes(i)} onChange={() => toggle(i)} /> {op}
-                        </label>
+            <div className="space-y-3">
+                <div className="font-medium">{content?.stem}</div>
+                <Checkbox.Group 
+                    value={currentValues}
+                    className="space-y-2"
+                >
+                    {options.map((option, index) => (
+                        <Checkbox 
+                            key={index} 
+                            value={index}
+                            onChange={() => handleChange(index)}
+                        >
+                            {option}
+                        </Checkbox>
                     ))}
-                </div>
+                </Checkbox.Group>
             </div>
         );
     }
-    if (q.type === 'fill_blank') {
-        const blanks: number = q.content?.blanks?.length || 0;
-        const cur: string[] = Array.isArray(value) ? value : Array.from({ length: blanks }, () => '');
-        const setIdx = (i: number, v: string) => {
-            const cp = [...cur];
-            cp[i] = v;
-            onChange(cp);
+    
+    if (type === 'fill_blank') {
+        const blanks: number = content?.blanks?.length || 0;
+        const currentValues: string[] = Array.isArray(value) ? value : Array.from({ length: blanks }, () => '');
+        
+        const handleChange = (index: number, newValue: string) => {
+            const newValues = [...currentValues];
+            newValues[index] = newValue;
+            onChange(newValues);
         };
+        
         return (
-            <div className="space-y-2">
-                <div>{q.content?.text}</div>
-                <div className="space-y-1">
-                    {Array.from({ length: blanks }).map((_, i) => (
-                        <input key={i} className="input" value={cur[i] || ''} onChange={(e) => setIdx(i, e.target.value)} placeholder={`填空 ${i + 1}`} />
+            <div className="space-y-3">
+                <div className="font-medium">{content?.text}</div>
+                <div className="space-y-2">
+                    {Array.from({ length: blanks }).map((_, index) => (
+                        <Input
+                            key={index}
+                            value={currentValues[index] || ''}
+                            onChange={(e) => handleChange(index, e.target.value)}
+                            placeholder={`填空 ${index + 1}`}
+                            className="max-w-xs"
+                        />
                     ))}
                 </div>
             </div>
         );
     }
-    if (q.type === 'short_answer' || q.type === 'essay') {
+    
+    if (type === 'short_answer' || type === 'essay') {
         return (
-            <div className="space-y-2">
-                <div>{q.content?.prompt}</div>
-                <textarea className="input min-h-28" value={value || ''} onChange={(e) => onChange(e.target.value)} placeholder="请输入答案" />
+            <div className="space-y-3">
+                <div className="font-medium">{content?.prompt}</div>
+                <Input.TextArea
+                    value={value || ''}
+                    onChange={(e) => onChange(e.target.value)}
+                    placeholder="请输入你的答案..."
+                    rows={type === 'essay' ? 6 : 3}
+                    className="max-w-lg"
+                />
             </div>
         );
     }
-    return <div>暂不支持的题型：{q.type}</div>;
+    
+    return <div className="text-gray-500">暂不支持的题型：{type}</div>;
 }
 
-function ResultView({ items, result, onRetrySame, onRetryWrong }: { items: PracticeItem[]; result: { results: Array<{ question_id: number; correct: boolean; score_unit: number; answer_key: any }>; correct_count: number; total: number }; onRetrySame: () => void; onRetryWrong: () => void; }) {
-    const map = new Map(result.results.map(r => [r.question_id, r] as const));
+function ResultView({ items, result, onRetrySame, onRetryWrong }: { 
+    items: PracticeItem[]; 
+    result: { results: Array<{ question_id: number; correct: boolean; score_unit: number; answer_key: any }>; correct_count: number; total: number }; 
+    onRetrySame: () => void; 
+    onRetryWrong: () => void; 
+}) {
+    const resultMap = new Map(result.results.map(r => [r.question_id, r]));
+    const accuracy = Math.round((result.correct_count / result.total) * 100);
+    
     return (
-        <div className="space-y-4">
-            <div className="card">
-                <div className="card-body flex items-center justify-between">
-                    <div>正确 {result.correct_count} / {result.total}</div>
-                    <div className="space-x-2">
-                        <button className="btn" onClick={onRetrySame}>再来一组</button>
-                        <button className="btn" onClick={onRetryWrong} disabled={result.correct_count === result.total}>错题重练</button>
-                    </div>
-                </div>
+        <div className="space-y-6">
+            <Card>
+                <Result
+                    status={accuracy >= 80 ? 'success' : accuracy >= 60 ? 'info' : 'warning'}
+                    title={`练习完成！得分：${accuracy}%`}
+                    subTitle={`答对了 ${result.correct_count} 题，共 ${result.total} 题`}
+                    extra={[
+                        <Button key="retry" onClick={onRetrySame} icon={<ReloadOutlined />}>
+                            再来一组
+                        </Button>,
+                        result.correct_count < result.total && (
+                            <Button key="wrong" type="primary" onClick={onRetryWrong}>
+                                错题重练
+                            </Button>
+                        )
+                    ].filter(Boolean)}
+                />
+            </Card>
+            
+            <div className="space-y-4">
+                {items.map((item, index) => {
+                    const resultInfo = resultMap.get(item.question_id);
+                    const isCorrect = resultInfo?.correct;
+                    
+                    return (
+                        <Card key={item.question_id}>
+                            <div className="card-body">
+                                <div className="flex items-center gap-3 mb-3">
+                                    <span className="text-sm text-gray-600">第 {index + 1} 题</span>
+                                    <Tag color={isCorrect ? 'green' : 'red'}>
+                                        {isCorrect ? <CheckOutlined /> : <CloseOutlined />}
+                                        {isCorrect ? '正确' : '错误'}
+                                    </Tag>
+                                </div>
+                                <QuestionSolution 
+                                    item={item} 
+                                    answerKey={resultInfo?.answer_key}
+                                    userAnswer={resultInfo ? resultInfo.answer_key : null}
+                                />
+                            </div>
+                        </Card>
+                    );
+                })}
             </div>
-            {items.map((it, idx) => {
-                const r = map.get(it.question_id);
-                const correct = r?.correct;
-                return (
-                    <div key={it.question_id} className="card">
-                        <div className="card-body space-y-2">
-                            <div className="text-sm muted">第 {idx + 1} 题 · {it.type} · {correct ? '正确' : '错误'}</div>
-                            <QuestionSolution item={it} answerKey={r?.answer_key} />
-                        </div>
-                    </div>
-                );
-            })}
         </div>
     );
 }
 
 function QuestionSolution({ item, answerKey }: { item: PracticeItem; answerKey: any }) {
-    const q = item;
-    if (q.type === 'single_choice' || q.type === 'multiple_choice') {
-        const options: string[] = q.content?.options || [];
-        return (
-            <div className="space-y-1">
-                <div>{q.content?.stem}</div>
-                <div className="text-sm">参考答案：{Array.isArray(answerKey) ? answerKey.join(', ') : String(answerKey)}</div>
-                <ul className="list-disc pl-6">
-                    {options.map((op: string, i: number) => (
-                        <li key={i}>{i}. {op}</li>
-                    ))}
-                </ul>
+    const { type, content } = item;
+    
+    const formatAnswerKey = (key: any, type: string) => {
+        if (!key) return '无参考答案';
+        
+        switch (type) {
+            case 'single_choice':
+                const options: string[] = content?.options || [];
+                return options[key] || key;
+            case 'multiple_choice':
+                const multiOptions: string[] = content?.options || [];
+                return Array.isArray(key) 
+                    ? key.map((k: number) => multiOptions[k] || k).join(', ')
+                    : String(key);
+            case 'fill_blank':
+                return Array.isArray(key) ? key.join(' | ') : String(key);
+            default:
+                return String(key);
+        }
+    };
+    
+    return (
+        <div className="space-y-3">
+            {type === 'single_choice' && (
+                <>
+                    <div className="font-medium">{content?.stem}</div>
+                    <div className="space-y-1">
+                        {(content?.options || []).map((option: string, index: number) => (
+                            <div key={index} className="text-sm">
+                                {index}. {option}
+                            </div>
+                        ))}
+                    </div>
+                </>
+            )}
+            
+            {type === 'multiple_choice' && (
+                <>
+                    <div className="font-medium">{content?.stem}</div>
+                    <div className="space-y-1">
+                        {(content?.options || []).map((option: string, index: number) => (
+                            <div key={index} className="text-sm">
+                                {index}. {option}
+                            </div>
+                        ))}
+                    </div>
+                </>
+            )}
+            
+            {type === 'fill_blank' && (
+                <>
+                    <div className="font-medium">{content?.text}</div>
+                </>
+            )}
+            
+            {(type === 'short_answer' || type === 'essay') && (
+                <>
+                    <div className="font-medium">{content?.prompt}</div>
+                </>
+            )}
+            
+            <div className="bg-gray-50 p-3 rounded">
+                <Text type="secondary" className="text-sm">
+                    <strong>参考答案：</strong>{formatAnswerKey(answerKey, type)}
+                </Text>
             </div>
-        );
-    }
-    if (q.type === 'fill_blank') {
-        return (
-            <div className="space-y-1">
-                <div>{q.content?.text}</div>
-                <div className="text-sm">参考答案：{Array.isArray(answerKey) ? answerKey.join(' | ') : String(answerKey)}</div>
-            </div>
-        );
-    }
-    if (q.type === 'short_answer' || q.type === 'essay') {
-        return (
-            <div className="space-y-1">
-                <div>{q.content?.prompt}</div>
-                <div className="text-sm">参考答案：{String(answerKey ?? '（无）')}</div>
-            </div>
-        );
-    }
-    return <div>暂不支持的题型：{q.type}</div>;
+        </div>
+    );
 }
-
-

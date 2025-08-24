@@ -229,6 +229,15 @@ function DashboardContent() {
                 >
                   进入考试
                 </Button>
+                {user.role === 'student' ? (
+                  <Button 
+                    block 
+                    onClick={() => router.push('/practice')}
+                    icon={<BookOutlined />}
+                  >
+                    题库练习
+                  </Button>
+                ) : null}
                 {user.role === 'teacher' || user.role === 'admin' ? (
                   <>
                     <Button 
@@ -262,6 +271,15 @@ function DashboardContent() {
                 >
                   我的考试
                 </Button>
+                {user.role === 'student' ? (
+                  <Button 
+                    size="large" 
+                    icon={<BookOutlined />}
+                    onClick={() => router.push('/practice')}
+                  >
+                    题库练习
+                  </Button>
+                ) : null}
                 {user.role === 'teacher' || user.role === 'admin' ? (
                   <>
                     <Button 
@@ -367,6 +385,11 @@ function DashboardContent() {
             </Card>
 
             {/* 推荐考试列表 */}
+            <Card title="推荐考试" style={{ marginBottom: 24 }}>
+              <RecommendedExams />
+            </Card>
+          </Col>
+        </Row>
       </div>
       <Modal
         open={editOpen}

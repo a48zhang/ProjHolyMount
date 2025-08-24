@@ -1,11 +1,36 @@
 import { NextResponse } from 'next/server';
+import { getAuthContext } from '@/lib/auth';
+import { withApiLogging } from '@/lib/logger';
 
 // 获取试卷可作答内容（题目列表及分值）。
 // 学生：仅可在被分配且发布窗口内访问，且不返回答案；
 // 教师/管理员：仅可访问自己创建的试卷，支持 includeAnswers 查询参数。
-export async function getExamPaperWithContext(ctx: AuthContext, examId: number, wantAnswers: boolean) {
+
+function ensurePlan(ctx: any, requiredPlan: string | null): void {
+  if (!requiredPlan) return;
+  if (ctx.plan !== requiredPlan && ctx.role !== 'admin') {
+    throw new Error('PLAN_REQUIRED');
+  }
+}
+
+function ensureGrade(ctx: any, requiredGrade: string | null): void {
+  if (!requiredGrade) return;
+  if (ctx.grade_level !== requiredGrade && ctx.role !== 'admin') {
+    throw new Error('GRADE_REQUIRED');
+  }
+}
+
+export async function getExamPaperWithContext(ctx: any, examId: number, wantAnswers: boolean) {
     try {
         if (!Number.isFinite(examId)) return NextResponse.json({ success: false, error: '参数错误' }, { status: 400 });
+
+        // 获取考试信息
+        const exam = await ctx.env.DB
+            .prepare('SELECT id, author_id, status, start_at, end_at, required_plan, required_grade_level FROM exams WHERE id = ?')
+            .bind(examId)
+            .first<any>();
+        
+        if (!exam) return NextResponse.json({ success: false, error: '试卷不存在' }, { status: 404 });
 
         // 权限校验
         let isAuthor = false;
@@ -57,9 +82,6 @@ export async function getExamPaperWithContext(ctx: AuthContext, examId: number, 
                 answer_key: wantAnswers && isAuthor ? (r.answer_key_json ? JSON.parse(r.answer_key_json) : null) : undefined,
             },
         }));
-
-            }
-        }
 
         return NextResponse.json({ success: true, data: { exam_id: examId, items } });
     } catch (error) {

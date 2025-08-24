@@ -7,11 +7,11 @@ test('GET /api/exams/[id]/paper returns items (author view, include answers)', a
         prepare: (sql: string) => ({
             bind: (..._args: any[]) => ({
                 first: async <T>() => {
-                    if (sql.includes('SELECT author_id FROM exams WHERE id = ?')) {
-                        return { author_id: 10 } as unknown as T;
+                    if (sql.includes('SELECT id, author_id, status, start_at, end_at, required_plan, required_grade_level FROM exams WHERE id = ?')) {
+                        return { id: 1, author_id: 10, status: 'published', start_at: null, end_at: null, required_plan: null, required_grade_level: null } as unknown as T;
                     }
-                    if (sql.includes('SELECT randomize FROM exams WHERE id = ?')) {
-                        return { randomize: 0 } as unknown as T;
+                    if (sql.includes('SELECT 1 FROM exam_assignments WHERE exam_id = ? AND user_id = ?')) {
+                        return { 1: 1 } as unknown as T;
                     }
                     return null as unknown as T;
                 },
