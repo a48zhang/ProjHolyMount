@@ -15,6 +15,7 @@ export default function EditExamPage() {
     const [pickerOpen, setPickerOpen] = useState(false);
     const [selectedIds, setSelectedIds] = useState<number[]>([]);
     const [pointsMap, setPointsMap] = useState<Record<number, number>>({});
+    const [questionList, setQuestionList] = useState<any[]>([]);
 
     useEffect(() => {
         const token = localStorage.getItem('token');
@@ -89,30 +90,12 @@ export default function EditExamPage() {
     const openQuestionPicker = async () => {
         const token = localStorage.getItem('token');
         if (!token) return message.error('未登录');
-        setQuestionModalOpen(true);
+        setPickerOpen(true);
         const res = await fetchJson<any>(`/api/questions?limit=100&offset=0&includeContent=false`, { headers: authHeaders(token, false) });
         if (res.success) setQuestionList(res.data || []);
         else message.error(res.error || '加载题库失败');
     };
 
-    const addSelectedQuestions = () => {
-        if (selectedQuestionIds.length === 0) { setQuestionModalOpen(false); return; }
-        setRows(list => {
-            const exists = new Set(list.map(it => it.question_id));
-            const toAdd = questionList.filter((q: any) => selectedQuestionIds.includes(q.id) && !exists.has(q.id));
-            const start = list.length;
-            const appended = toAdd.map((q: any, i: number) => ({
-                exam_question_id: `new-${q.id}`,
-                order_index: start + i + 1,
-                points: 1,
-                question_id: q.id,
-                question: { id: q.id, type: q.type, schema_version: q.schema_version },
-            }));
-            return [...list, ...appended];
-        });
-        setQuestionModalOpen(false);
-        setSelectedQuestionIds([]);
-    };
 
     const saveExamQuestions = async () => {
         const token = localStorage.getItem('token');

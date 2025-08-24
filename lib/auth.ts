@@ -27,7 +27,7 @@ export async function getAuthContext(request: Request): Promise<AuthContext> {
     const jwtSecret = env.JWT_SECRET;
     if (!jwtSecret) throw new Error('SERVER_CONFIG');
 
-    const decoded = jwt.verify(token, jwtSecret) as BasicToken;
+    const decoded = jwt.verify(token, jwtSecret) as jwt.JwtPayload & BasicToken;
 
     // 读取角色
     const roleRow = await env.DB

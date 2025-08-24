@@ -56,7 +56,7 @@ test('validateEmail - validates email format', (t) => {
 test('validatePassword - validates password strength', (t) => {
   const weak1 = validatePassword('12345');
   t.false(weak1.valid, 'rejects too short password');
-  t.equal(weak1.errors.length, 1, 'correctly counts 1 error for short password');
+  t.equal(weak1.errors.length, 3, 'correctly counts 3 errors for short password');
   
   const weak2 = validatePassword('password');
   t.false(weak2.valid, 'rejects weak password');

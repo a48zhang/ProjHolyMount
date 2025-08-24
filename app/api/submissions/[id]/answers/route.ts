@@ -3,7 +3,7 @@ import { getAuthContext } from '@/lib/auth';
 import type { AuthContext } from '@/lib/auth';
 import { withApiLogging } from '@/lib/logger';
 
-export async function saveAnswersWithContext(ctx: AuthContext, submissionId: number, items: Array<{ exam_question_id: number; answer_json: unknown }>) {
+async function saveAnswersWithContext(ctx: AuthContext, submissionId: number, items: Array<{ exam_question_id: number; answer_json: unknown }>) {
     try {
         if (!Number.isFinite(submissionId)) return NextResponse.json({ success: false, error: '参数错误' }, { status: 400 });
 

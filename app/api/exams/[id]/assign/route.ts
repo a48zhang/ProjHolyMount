@@ -3,7 +3,7 @@ import { getAuthContext } from '@/lib/auth';
 import type { AuthContext } from '@/lib/auth';
 import { withApiLogging } from '@/lib/logger';
 
-export async function assignExamWithContext(
+async function assignExamWithContext(
     ctx: AuthContext,
     id: number,
     user_ids: number[],

@@ -1,17 +1,24 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { message, Select, Button, Card, Space, Typography, Tag, Spin, Result, Row, Col, Radio, Checkbox, Input } from 'antd';
+import { message, Select, Button, Card, Typography, Tag, Spin, Result, Row, Col, Radio, Checkbox, Input } from 'antd';
 import { BookOutlined, ReloadOutlined, CheckOutlined, CloseOutlined } from '@ant-design/icons';
 import PageHeader from '@/components/page-header';
+import { fetchJson } from '@/lib/http';
 
 const { Title, Text, Paragraph } = Typography;
+
+interface QuestionContent {
+    question: string;
+    options?: string[];
+    [key: string]: unknown;
+}
 
 type PracticeItem = {
     question_id: number;
     type: string;
     schema_version: number;
-    content: any;
+    content: QuestionContent;
 };
 
 const QUESTION_TYPES = [
@@ -24,11 +31,11 @@ const QUESTION_TYPES = [
 
 export default function PracticePage() {
     const [items, setItems] = useState<PracticeItem[]>([]);
-    const [answers, setAnswers] = useState<Record<number, any>>({});
+    const [answers, setAnswers] = useState<Record<number, string | string[] | string[][]>>({});
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
     const [result, setResult] = useState<null | {
-        results: Array<{ question_id: number; correct: boolean; score_unit: number; answer_key: any }>;
+        results: Array<{ question_id: number; correct: boolean; score_unit: number; answer_key: unknown }>;
         correct_count: number;
         total: number;
     }>(null);
@@ -55,15 +62,14 @@ export default function PracticePage() {
             qs.set('count', String(lastParams.count || 10));
             if (lastParams.type) qs.set('type', lastParams.type);
             
-            const response = await fetch(`/api/practice/paper?${qs.toString()}`, {
+            const data = await fetchJson<{ success: boolean; data: { items: PracticeItem[] }; error?: string }>(`/api/practice/paper?${qs.toString()}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
-            const data = await response.json();
             
             if (!data.success) throw new Error(data.error || '获取失败');
             setItems(data.data.items || []);
-        } catch (error: any) {
-            message.error(error.message || '加载失败');
+        } catch (error: unknown) {
+            message.error(error instanceof Error ? error.message : '加载失败');
         } finally {
             setLoading(false);
         }
@@ -85,7 +91,7 @@ export default function PracticePage() {
                 items: items.map(it => ({ question_id: it.question_id, answer: answers[it.question_id] }))
             };
             
-            const response = await fetch('/api/practice/submit', {
+            const data = await fetchJson<{ success: boolean; data: { results: Array<{ question_id: number; correct: boolean; score_unit: number; answer_key: unknown }>; correct_count: number; total: number }; error?: string }>('/api/practice/submit', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -93,12 +99,10 @@ export default function PracticePage() {
                 },
                 body: JSON.stringify(payload)
             });
-            
-            const data = await response.json();
             if (!data.success) throw new Error(data.error || '提交失败');
             setResult(data.data);
-        } catch (error: any) {
-            message.error(error.message || '提交失败');
+        } catch (error: unknown) {
+            message.error(error instanceof Error ? error.message : '提交失败');
         } finally {
             setSubmitting(false);
         }
@@ -244,22 +248,22 @@ export default function PracticePage() {
     );
 }
 
-function QuestionRenderer({ item, value, onChange }: { item: PracticeItem; value: any; onChange: (v: any) => void }) {
+function QuestionRenderer({ item, value, onChange }: { item: PracticeItem; value: string | string[] | string[][] | undefined; onChange: (v: string | string[] | string[][]) => void }) {
     const { type, content } = item;
     
     if (type === 'single_choice') {
         const options: string[] = content?.options || [];
         return (
             <div className="space-y-3">
-                <div className="font-medium">{content?.stem}</div>
+                <div className="font-medium">{String(content?.question || '')}</div>
                 <Radio.Group 
                     value={value} 
                     onChange={(e) => onChange(e.target.value)}
                     className="space-y-2"
                 >
                     {options.map((option, index) => (
-                        <Radio key={index} value={index}>
-                            {option}
+                        <Radio key={index} value={String(option)}>
+                            {String(option || '')}
                         </Radio>
                     ))}
                 </Radio.Group>
@@ -269,18 +273,18 @@ function QuestionRenderer({ item, value, onChange }: { item: PracticeItem; value
     
     if (type === 'multiple_choice') {
         const options: string[] = content?.options || [];
-        const currentValues: number[] = Array.isArray(value) ? value : [];
+        const currentValues = (Array.isArray(value) && value.every(v => typeof v === 'string')) ? value as string[] : [];
         
-        const handleChange = (checkedValue: number) => {
+        const handleChange = (checkedValue: string) => {
             const newValues = currentValues.includes(checkedValue)
                 ? currentValues.filter(v => v !== checkedValue)
                 : [...currentValues, checkedValue];
-            onChange(newValues.sort((a, b) => a - b));
+            onChange(newValues.sort());
         };
         
         return (
             <div className="space-y-3">
-                <div className="font-medium">{content?.stem}</div>
+                <div className="font-medium">{String(content?.question || '')}</div>
                 <Checkbox.Group 
                     value={currentValues}
                     className="space-y-2"
@@ -288,10 +292,10 @@ function QuestionRenderer({ item, value, onChange }: { item: PracticeItem; value
                     {options.map((option, index) => (
                         <Checkbox 
                             key={index} 
-                            value={index}
-                            onChange={() => handleChange(index)}
+                            value={String(option)}
+                            onChange={() => handleChange(String(option))}
                         >
-                            {option}
+                            {String(option || '')}
                         </Checkbox>
                     ))}
                 </Checkbox.Group>
@@ -300,8 +304,8 @@ function QuestionRenderer({ item, value, onChange }: { item: PracticeItem; value
     }
     
     if (type === 'fill_blank') {
-        const blanks: number = content?.blanks?.length || 0;
-        const currentValues: string[] = Array.isArray(value) ? value : Array.from({ length: blanks }, () => '');
+        const blanks: number = (typeof content?.blanks === 'number') ? content.blanks : (Array.isArray(content?.blanks) ? content.blanks.length : 0);
+        const currentValues = (Array.isArray(value) && value.every(v => typeof v === 'string')) ? value as string[] : Array.from({ length: blanks }, () => '');
         
         const handleChange = (index: number, newValue: string) => {
             const newValues = [...currentValues];
@@ -311,7 +315,7 @@ function QuestionRenderer({ item, value, onChange }: { item: PracticeItem; value
         
         return (
             <div className="space-y-3">
-                <div className="font-medium">{content?.text}</div>
+                <div className="font-medium">{String(content?.question || '')}</div>
                 <div className="space-y-2">
                     {Array.from({ length: blanks }).map((_, index) => (
                         <Input
@@ -328,11 +332,12 @@ function QuestionRenderer({ item, value, onChange }: { item: PracticeItem; value
     }
     
     if (type === 'short_answer' || type === 'essay') {
+        const stringValue = typeof value === 'string' ? value : '';
         return (
             <div className="space-y-3">
-                <div className="font-medium">{content?.prompt}</div>
+                <div className="font-medium">{String(content?.prompt || '')}</div>
                 <Input.TextArea
-                    value={value || ''}
+                    value={stringValue}
                     onChange={(e) => onChange(e.target.value)}
                     placeholder="请输入你的答案..."
                     rows={type === 'essay' ? 6 : 3}
@@ -392,7 +397,6 @@ function ResultView({ items, result, onRetrySame, onRetryWrong }: {
                                 <QuestionSolution 
                                     item={item} 
                                     answerKey={resultInfo?.answer_key}
-                                    userAnswer={resultInfo ? resultInfo.answer_key : null}
                                 />
                             </div>
                         </Card>
@@ -412,11 +416,11 @@ function QuestionSolution({ item, answerKey }: { item: PracticeItem; answerKey: 
         switch (type) {
             case 'single_choice':
                 const options: string[] = content?.options || [];
-                return options[key] || key;
+                return String(options[key] || key);
             case 'multiple_choice':
                 const multiOptions: string[] = content?.options || [];
                 return Array.isArray(key) 
-                    ? key.map((k: number) => multiOptions[k] || k).join(', ')
+                    ? key.map((k: number) => String(multiOptions[k] || k)).join(', ')
                     : String(key);
             case 'fill_blank':
                 return Array.isArray(key) ? key.join(' | ') : String(key);
@@ -429,11 +433,11 @@ function QuestionSolution({ item, answerKey }: { item: PracticeItem; answerKey: 
         <div className="space-y-3">
             {type === 'single_choice' && (
                 <>
-                    <div className="font-medium">{content?.stem}</div>
+                    <div className="font-medium">{String(content?.question || '')}</div>
                     <div className="space-y-1">
                         {(content?.options || []).map((option: string, index: number) => (
                             <div key={index} className="text-sm">
-                                {index}. {option}
+                                {index}. {String(option || '')}
                             </div>
                         ))}
                     </div>
@@ -442,11 +446,11 @@ function QuestionSolution({ item, answerKey }: { item: PracticeItem; answerKey: 
             
             {type === 'multiple_choice' && (
                 <>
-                    <div className="font-medium">{content?.stem}</div>
+                    <div className="font-medium">{String(content?.question || '')}</div>
                     <div className="space-y-1">
                         {(content?.options || []).map((option: string, index: number) => (
                             <div key={index} className="text-sm">
-                                {index}. {option}
+                                {index}. {String(option || '')}
                             </div>
                         ))}
                     </div>
@@ -455,13 +459,13 @@ function QuestionSolution({ item, answerKey }: { item: PracticeItem; answerKey: 
             
             {type === 'fill_blank' && (
                 <>
-                    <div className="font-medium">{content?.text}</div>
+                    <div className="font-medium">{String(content?.question || '')}</div>
                 </>
             )}
             
             {(type === 'short_answer' || type === 'essay') && (
                 <>
-                    <div className="font-medium">{content?.prompt}</div>
+                    <div className="font-medium">{String(content?.prompt || '')}</div>
                 </>
             )}
             

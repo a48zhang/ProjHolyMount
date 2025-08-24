@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { getCloudflareContext } from '@opennextjs/cloudflare';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
@@ -9,7 +9,7 @@ interface LoginRequest {
   password: string;
 }
 
-export const POST = withApiLogging(async (request: NextRequest) => {
+export const POST = withApiLogging(async (request: Request) => {
   try {
     const { env } = await getCloudflareContext();
     const body: LoginRequest = await request.json();

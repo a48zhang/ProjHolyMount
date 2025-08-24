@@ -10,7 +10,7 @@ type Question = {
     answer_key_json: string | null;
 };
 
-export function scoreObjective(question: Question, answer: any): number {
+function scoreObjective(question: Question, answer: unknown): number {
     try {
         const type = question.type;
         const key = question.answer_key_json ? JSON.parse(question.answer_key_json) : null;
@@ -26,12 +26,12 @@ export function scoreObjective(question: Question, answer: any): number {
         }
         if (type === 'fill_blank') {
             const blanks: string[] = Array.isArray(answer) ? answer : [];
-            const keys: any[] = Array.isArray(key) ? key : [];
+            const keys: unknown[] = Array.isArray(key) ? key : [];
             if (blanks.length !== keys.length) return 0;
             for (let i = 0; i < keys.length; i++) {
-                const accept = Array.isArray(keys[i]) ? keys[i] : [keys[i]];
+                const accept = Array.isArray(keys[i]) ? keys[i] as string[] : [keys[i]];
                 const got = String((blanks[i] ?? '')).trim().toLowerCase();
-                const ok = accept.some((v: any) => String(v).trim().toLowerCase() === got);
+                const ok = accept.some((v: unknown) => String(v).trim().toLowerCase() === got);
                 if (!ok) return 0;
             }
             return 1;
@@ -43,7 +43,7 @@ export function scoreObjective(question: Question, answer: any): number {
     }
 }
 
-export async function submitWithContext(ctx: AuthContext, submissionId: number) {
+async function submitWithContext(ctx: AuthContext, submissionId: number) {
     try {
         if (!Number.isFinite(submissionId)) return NextResponse.json({ success: false, error: '参数错误' }, { status: 400 });
 
@@ -66,7 +66,7 @@ export async function submitWithContext(ctx: AuthContext, submissionId: number) 
             .bind(submissionId)
             .all<{ exam_question_id: number; answer_json: string }>();
 
-        const answerMap = new Map<number, any>();
+        const answerMap = new Map<number, unknown>();
         for (const r of answers.results || []) {
             answerMap.set(r.exam_question_id, r.answer_json ? JSON.parse(r.answer_json) : null);
         }

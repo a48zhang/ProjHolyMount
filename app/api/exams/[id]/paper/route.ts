@@ -1,26 +1,58 @@
 import { NextResponse } from 'next/server';
-import { getAuthContext } from '@/lib/auth';
+import { getAuthContext, AuthContext } from '@/lib/auth';
 import { withApiLogging } from '@/lib/logger';
+
+interface ExamInfo {
+  id: number;
+  author_id: number;
+  status: string;
+  start_at: string | null;
+  end_at: string | null;
+  required_plan: string | null;
+  required_grade_level: string | null;
+}
+
+interface ExamQuestionRow {
+  exam_question_id: number;
+  points: number;
+  question_id: number;
+  type: string;
+  schema_version: number;
+  content_json: string;
+  answer_key_json: string | null;
+}
+
+interface ExamQuestion {
+  exam_question_id: number;
+  points: number;
+  question: {
+    id: number;
+    type: string;
+    schema_version: number;
+    content: unknown;
+    answer_key?: unknown;
+  };
+}
 
 // 获取试卷可作答内容（题目列表及分值）。
 // 学生：仅可在被分配且发布窗口内访问，且不返回答案；
 // 教师/管理员：仅可访问自己创建的试卷，支持 includeAnswers 查询参数。
 
-function ensurePlan(ctx: any, requiredPlan: string | null): void {
+function ensurePlan(ctx: AuthContext, requiredPlan: string | null): void {
   if (!requiredPlan) return;
   if (ctx.plan !== requiredPlan && ctx.role !== 'admin') {
     throw new Error('PLAN_REQUIRED');
   }
 }
 
-function ensureGrade(ctx: any, requiredGrade: string | null): void {
+function ensureGrade(ctx: AuthContext, requiredGrade: string | null): void {
   if (!requiredGrade) return;
   if (ctx.grade_level !== requiredGrade && ctx.role !== 'admin') {
     throw new Error('GRADE_REQUIRED');
   }
 }
 
-export async function getExamPaperWithContext(ctx: any, examId: number, wantAnswers: boolean) {
+async function getExamPaperWithContext(ctx: AuthContext, examId: number, wantAnswers: boolean) {
     try {
         if (!Number.isFinite(examId)) return NextResponse.json({ success: false, error: '参数错误' }, { status: 400 });
 
@@ -28,7 +60,7 @@ export async function getExamPaperWithContext(ctx: any, examId: number, wantAnsw
         const exam = await ctx.env.DB
             .prepare('SELECT id, author_id, status, start_at, end_at, required_plan, required_grade_level FROM exams WHERE id = ?')
             .bind(examId)
-            .first<any>();
+            .first<ExamInfo>();
         
         if (!exam) return NextResponse.json({ success: false, error: '试卷不存在' }, { status: 404 });
 
@@ -42,7 +74,7 @@ export async function getExamPaperWithContext(ctx: any, examId: number, wantAnsw
             const assigned = await ctx.env.DB
                 .prepare('SELECT 1 FROM exam_assignments WHERE exam_id = ? AND user_id = ?')
                 .bind(examId, ctx.userId)
-                .first<{ 1: number }>();
+                .first();
             if (!assigned) return NextResponse.json({ success: false, error: '无权访问' }, { status: 403 });
             if (exam.status !== 'published') return NextResponse.json({ success: false, error: '试卷未发布' }, { status: 400 });
             const now = Date.now();
@@ -60,17 +92,9 @@ export async function getExamPaperWithContext(ctx: any, examId: number, wantAnsw
                 'SELECT eq.id as exam_question_id, eq.points, q.id as question_id, q.type, q.schema_version, q.content_json, q.answer_key_json FROM exam_questions eq JOIN questions q ON q.id = eq.question_id WHERE eq.exam_id = ? ORDER BY eq.order_index ASC'
             )
             .bind(examId)
-            .all<{
-                exam_question_id: number;
-                points: number;
-                question_id: number;
-                type: string;
-                schema_version: number;
-                content_json: string | null;
-                answer_key_json: string | null;
-            }>();
+            .all<ExamQuestionRow>();
 
-        let items = (rows.results || []).map(r => ({
+        let items: ExamQuestion[] = (rows.results || []).map((r) => ({
             exam_question_id: r.exam_question_id,
             points: r.points,
             question: {

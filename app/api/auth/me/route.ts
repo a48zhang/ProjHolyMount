@@ -1,10 +1,10 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { getCloudflareContext } from '@opennextjs/cloudflare';
 import jwt from 'jsonwebtoken';
 import { getAuthContext } from '@/lib/auth';
 import { withApiLogging } from '@/lib/logger';
 
-export const GET = withApiLogging(async (request: NextRequest) => {
+export const GET = withApiLogging(async (request: Request) => {
   try {
     const { env } = await getCloudflareContext();
 

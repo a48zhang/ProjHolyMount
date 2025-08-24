@@ -4,7 +4,7 @@ import type { AuthContext } from '@/lib/auth';
 import { withApiLogging } from '@/lib/logger';
 
 // 创建题目
-export async function createQuestionWithContext(
+async function createQuestionWithContext(
     ctx: AuthContext,
     body: { type: string; content_json: unknown; answer_key_json?: unknown; rubric_json?: unknown; schema_version?: number }
 ) {
@@ -41,7 +41,7 @@ export async function createQuestionWithContext(
 
 export const POST = withApiLogging(async (request: Request) => {
     const ctx = await getAuthContext(request);
-    const body = (await request.json()) as any;
+    const body = (await request.json()) as { type: string; content_json: unknown; answer_key_json?: unknown; rubric_json?: unknown; schema_version?: number };
     return createQuestionWithContext(ctx, body);
 });
 
@@ -72,13 +72,24 @@ export const GET = withApiLogging(async (request: Request) => {
             ? ctx.env.DB.prepare(baseSql + whereType + orderLimit)
             : ctx.env.DB.prepare(baseSql + whereType + orderLimit);
 
-        const binds: any[] = [];
+        const binds: (string | number)[] = [];
         if (ctx.role !== 'admin') binds.push(ctx.userId);
         if (type) binds.push(type);
         binds.push(limit, offset);
 
-        const rows = await stmt.bind(...binds).all<any>();
-        const results = (rows.results || []).map((r: any) => ({
+        interface QuestionRow {
+            id: number;
+            author_id: number;
+            type: string;
+            schema_version: number;
+            is_active: number;
+            created_at: string;
+            updated_at: string;
+            content_json?: string;
+        }
+
+        const rows = await stmt.bind(...binds).all<QuestionRow>();
+        const results = (rows.results || []).map((r) => ({
             ...r,
             ...(includeContent ? { content_json: r.content_json ? JSON.parse(r.content_json) : null } : {}),
         }));

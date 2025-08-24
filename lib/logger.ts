@@ -53,7 +53,7 @@ async function insertErrorLog(params: {
 export async function log5xx(request: Request, status: number, error?: MaybeError) {
     try {
         const url = new URL(request.url);
-        const method = (request as any).method || 'GET';
+        const method = request.method || 'GET';
         const headers = request.headers;
         const userAgent = headers.get('user-agent');
         const ip = headers.get('cf-connecting-ip') || headers.get('x-forwarded-for');
@@ -88,13 +88,15 @@ export async function log5xx(request: Request, status: number, error?: MaybeErro
     }
 }
 
-export function withApiLogging<TResponse extends Response | any = Response>(
+export function withApiLogging<TResponse extends Response | Record<string, unknown> = Response>(
     handler: (request: Request) => Promise<TResponse>
 ) {
     return async function wrapped(request: Request): Promise<TResponse> {
         try {
             const res = await handler(request);
-            const status: number = (res && typeof (res as any).status === 'number') ? (res as any).status : 200;
+            const status: number = (res && typeof res === 'object' && 'status' in res && typeof res.status === 'number') 
+                ? res.status 
+                : 200;
             if (status >= 500) {
                 await log5xx(request, status);
             }

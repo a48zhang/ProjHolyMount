@@ -1,6 +1,17 @@
 import { NextResponse } from 'next/server';
 import { getAuthContext, requireRole } from '@/lib/auth';
+import { getCloudflareContext } from '@opennextjs/cloudflare';
 import { withApiLogging } from '@/lib/logger';
+
+interface CreateExamRequest {
+  title: string;
+  description?: string;
+  duration_minutes?: number;
+  randomize?: boolean;
+  required_plan?: string | null;
+  required_grade_level?: string | null;
+  is_public?: boolean;
+}
 
 // 创建试卷（草稿）
 export const POST = withApiLogging(async (request: Request) => {
@@ -8,8 +19,8 @@ export const POST = withApiLogging(async (request: Request) => {
         const ctx = await getAuthContext(request);
         requireRole(ctx, ['teacher', 'admin']);
 
-        const body = await request.json();
-        const { title, description, duration_minutes, randomize = 0, required_plan = null, required_grade_level = null, is_public = 0 } = body as any;
+        const body = await request.json() as CreateExamRequest;
+        const { title, description, duration_minutes, randomize = false, required_plan = null, required_grade_level = null, is_public = false } = body;
         if (!title) return NextResponse.json({ success: false, error: '缺少标题' }, { status: 400 });
 
         await ctx.env.DB
@@ -37,7 +48,7 @@ export const GET = withApiLogging(async (request: Request) => {
         const list = searchParams.get('list'); // 'public' 返回公开试卷
 
         let sql: string;
-        let binds: any[] = [];
+        let binds: (string | number)[] = [];
         if (list === 'public') {
             sql = `SELECT id, title, status, start_at, end_at, duration_minutes, randomize, total_points, created_at, updated_at
              FROM exams
@@ -63,7 +74,8 @@ export const GET = withApiLogging(async (request: Request) => {
             }
         }
 
-        const rows = await ctx.env.DB.prepare(sql).bind(...binds).all<any>();
+        const { env } = await getCloudflareContext();
+        const rows = await env.DB.prepare(sql).bind(...binds).all();
         return NextResponse.json({ success: true, data: rows.results || [] });
     } catch (error) {
         console.error('获取试卷列表错误:', error);

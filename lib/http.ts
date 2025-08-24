@@ -4,8 +4,11 @@ export function authHeaders(token: string, json = true): Record<string, string> 
     return headers;
 }
 
-export async function fetchJson<T = any>(input: RequestInfo | URL, init?: RequestInit): Promise<T> {
+export async function fetchJson<T = unknown>(input: RequestInfo | URL, init?: RequestInit): Promise<T> {
     const res = await fetch(input, init);
+    if (!res.ok) {
+        throw new Error(`HTTP error! status: ${res.status}`);
+    }
     const data = await res.json();
     return data as T;
 }
