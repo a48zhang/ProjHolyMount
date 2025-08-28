@@ -45,16 +45,17 @@ test('fetchJson - handles error responses', async (t) => {
   const mockResponse = {
     ok: false,
     status: 404,
-    statusText: 'Not Found'
+    statusText: 'Not Found',
+    json: () => Promise.resolve({ error: 'Not Found' })
   };
   
   global.fetch = (() => Promise.resolve(mockResponse)) as any;
   
   try {
     const result = await fetchJson('/api/test', { headers: {} });
-    t.equal(result.error, 'Not Found', 'returns error response');
+    t.fail('should throw for error response');
   } catch (error: any) {
-    t.equal(error.message, 'res.json is not a function', 'handles error with missing json method');
+    t.equal(error.message, 'HTTP error! status: 404', 'throws HTTP error for error response');
   }
   
   // Test network error

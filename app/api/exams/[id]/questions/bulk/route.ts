@@ -3,7 +3,7 @@ import { getAuthContext } from '@/lib/auth';
 import type { AuthContext } from '@/lib/auth';
 import { withApiLogging } from '@/lib/logger';
 
-async function setExamQuestionsWithContext(
+export async function setExamQuestionsWithContext(
     ctx: AuthContext,
     examId: number,
     items: Array<{ question_id: number; order_index: number; points: number }>
