@@ -4,7 +4,7 @@ import type { AuthContext } from '@/lib/auth';
 import { withApiLogging } from '@/lib/logger';
 
 // 教师/管理员：查看试卷已挂题目（含 content，不返回答案）
-async function listExamQuestionsWithContext(ctx: AuthContext, examId: number) {
+export async function listExamQuestionsWithContext(ctx: AuthContext, examId: number) {
     try {
         if (!Number.isFinite(examId)) return NextResponse.json({ success: false, error: '参数错误' }, { status: 400 });
         const own = await ctx.env.DB.prepare('SELECT author_id FROM exams WHERE id = ?').bind(examId).first<{ author_id: number }>();

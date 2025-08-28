@@ -52,7 +52,7 @@ function ensureGrade(ctx: AuthContext, requiredGrade: string | null): void {
   }
 }
 
-async function getExamPaperWithContext(ctx: AuthContext, examId: number, wantAnswers: boolean) {
+export async function getExamPaperWithContext(ctx: AuthContext, examId: number, wantAnswers: boolean) {
     try {
         if (!Number.isFinite(examId)) return NextResponse.json({ success: false, error: '参数错误' }, { status: 400 });
 

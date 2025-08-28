@@ -4,7 +4,7 @@ import type { AuthContext } from '@/lib/auth';
 import { withApiLogging } from '@/lib/logger';
 
 // 获取试卷详情
-async function getExamDetailWithContext(ctx: AuthContext, id: number) {
+export async function getExamDetailWithContext(ctx: AuthContext, id: number) {
     try {
         if (!Number.isFinite(id)) return NextResponse.json({ success: false, error: '参数错误' }, { status: 400 });
         // 教师可看自己创建的；学生仅可看被分配的
@@ -36,7 +36,7 @@ export const GET = withApiLogging(async (request: Request) => {
 });
 
 // 更新试卷（草稿阶段）
-async function updateExamWithContext(
+export async function updateExamWithContext(
     ctx: AuthContext,
     id: number,
     body: { title?: string; description?: string; duration_minutes?: number; randomize?: boolean; required_plan?: string | null; required_grade_level?: string | null; is_public?: boolean }

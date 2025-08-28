@@ -3,7 +3,7 @@ import { ensureGrade, ensurePlan, getAuthContext, requireAssigned } from '@/lib/
 import type { AuthContext } from '@/lib/auth';
 import { withApiLogging } from '@/lib/logger';
 
-async function startExamWithContext(ctx: AuthContext, examId: number) {
+export async function startExamWithContext(ctx: AuthContext, examId: number) {
     try {
         const exam = await ctx.env.DB
             .prepare('SELECT status, start_at, end_at, duration_minutes, required_plan, required_grade_level, is_public FROM exams WHERE id = ?')
