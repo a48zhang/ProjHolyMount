@@ -11,7 +11,7 @@ import { MenuOutlined, ReadOutlined, ProfileOutlined, BookOutlined, LogoutOutlin
 
 type Role = 'student' | 'teacher' | 'admin';
 
-export default function AppNav() {
+function AppNavContent() {
     const pathname = usePathname();
     const searchParams = useSearchParams();
     const router = useRouter();
@@ -113,8 +113,8 @@ export default function AppNav() {
                 top: 0,
                 zIndex: 100,
                 paddingInline: 16,
-                borderBottom: '1px solid var(--card-border)',
-                background: 'var(--background)'
+                borderBottom: '1px solid var(--color-border)',
+                background: 'var(--color-surface)'
             }}
         >
             <div
@@ -137,7 +137,7 @@ export default function AppNav() {
                             onClick={() => setMobileOpen(true)}
                         />
                     )}
-                    <Link href="/dashboard" className="no-underline" style={{ fontWeight: 600, color: 'var(--foreground)' }}>
+                    <Link href="/" className="no-underline" style={{ fontWeight: 600, color: 'var(--color-title)' }}>
                         英语学习平台
                     </Link>
                     {screens.md && (
@@ -180,5 +180,24 @@ export default function AppNav() {
                 </div>
             </Drawer>
         </Layout.Header>
+    );
+}
+
+export default function AppNav() {
+    return (
+        <React.Suspense fallback={
+            <Layout.Header style={{
+                position: 'sticky',
+                top: 0,
+                zIndex: 100,
+                paddingInline: 16,
+                borderBottom: '1px solid var(--color-border)',
+                background: 'var(--color-surface)'
+            }}>
+                <div style={{ height: '100%' }}></div>
+            </Layout.Header>
+        }>
+            <AppNavContent />
+        </React.Suspense>
     );
 }

@@ -15,11 +15,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="zh-CN">
       <body>
         <ThemeProvider>
-          <Suspense fallback={
-            <div className="h-16 bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800"></div>
-          }>
-            <AppNav />
-          </Suspense>
+          <AppNav />
           {children}
         </ThemeProvider>
       </body>

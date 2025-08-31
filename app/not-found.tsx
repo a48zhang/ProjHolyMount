@@ -2,8 +2,9 @@
 
 import Link from 'next/link';
 import { Button } from 'antd';
+import { Suspense } from 'react';
 
-export default function NotFound() {
+function NotFoundContent() {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
       <div className="text-center">
@@ -21,5 +22,13 @@ export default function NotFound() {
         </Link>
       </div>
     </div>
+  );
+}
+
+export default function NotFound() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-gray-50 dark:bg-gray-900"></div>}>
+      <NotFoundContent />
+    </Suspense>
   );
 }

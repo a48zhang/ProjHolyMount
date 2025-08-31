@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ThemeToggle } from '@/components/theme-toggle';
 
 export default function HomeContent() {
   const [showLogin, setShowLogin] = useState(false);
@@ -31,10 +30,7 @@ export default function HomeContent() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
-      <div className="fixed top-4 right-4">
-        <ThemeToggle />
-      </div>
-      <div className="max-w-4xl mx-auto text-center">
+      <div className="max-w-4xl w-full mx-auto text-center">
         <div className="mb-8">
           <h1 className="text-5xl font-bold text-gray-900 dark:text-white mb-4">
             英语学习平台
@@ -44,8 +40,8 @@ export default function HomeContent() {
           </p>
         </div>
 
-        <div className="card p-8 mb-8">
-          <div className="grid md:grid-cols-3 gap-6 mb-8">
+        <div className="card p-8 mb-8 w-full">
+          <div className="grid md:grid-cols-3 gap-6 mb-8 justify-items-center">
             <div className="text-center">
               <div className="bg-blue-100 dark:bg-blue-900 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-3">
                 <span className="text-2xl">📚</span>
@@ -69,7 +65,7 @@ export default function HomeContent() {
             </div>
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             <button
               onClick={handleLogin}
               className="bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
