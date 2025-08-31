@@ -30,33 +30,33 @@ export default function HomeContent() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
-      <div className="max-w-4xl w-full mx-auto text-center">
-        <div className="mb-8">
-          <h1 className="text-5xl font-bold text-gray-900 dark:text-white mb-4">
+      <div className="max-w-2xl w-full mx-auto">
+        <div className="text-center mb-8">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4">
             英语学习平台
           </h1>
-          <p className="text-xl text-gray-600 dark:text-gray-300 mb-8">
+          <p className="text-base sm:text-lg md:text-xl text-gray-600 dark:text-gray-300 mb-8 max-w-lg mx-auto">
             开启你的英语学习之旅，每天进步一点点
           </p>
         </div>
 
-        <div className="card p-8 mb-8 w-full">
-          <div className="grid md:grid-cols-3 gap-6 mb-8 justify-items-center">
-            <div className="text-center">
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 sm:p-8 mb-6">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 mb-8">
+            <div className="text-center p-4">
               <div className="bg-blue-100 dark:bg-blue-900 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-3">
                 <span className="text-2xl">📚</span>
               </div>
               <h3 className="font-semibold text-gray-900 dark:text-white mb-2">词汇学习</h3>
               <p className="text-sm text-gray-600 dark:text-gray-300">循序渐进的词汇积累</p>
             </div>
-            <div className="text-center">
+            <div className="text-center p-4">
               <div className="bg-green-100 dark:bg-green-900 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-3">
                 <span className="text-2xl">🎯</span>
               </div>
               <h3 className="font-semibold text-gray-900 dark:text-white mb-2">个性学习</h3>
               <p className="text-sm text-gray-600 dark:text-gray-300">根据你的水平定制内容</p>
             </div>
-            <div className="text-center">
+            <div className="text-center p-4">
               <div className="bg-purple-100 dark:bg-purple-900 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-3">
                 <span className="text-2xl">📊</span>
               </div>
@@ -64,30 +64,30 @@ export default function HomeContent() {
               <p className="text-sm text-gray-600 dark:text-gray-300">记录你的学习进度</p>
             </div>
           </div>
-
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-            <button
-              onClick={handleLogin}
-              className="bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
-            >
-              登录账号
-            </button>
-            <button
-              onClick={handleRegister}
-              className="bg-green-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-green-700 transition-colors"
-            >
-              注册新账号
-            </button>
-            <button
-              onClick={handleGuest}
-              className="bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-gray-200 px-6 py-3 rounded-lg font-semibold hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
-            >
-              游客访问
-            </button>
-          </div>
         </div>
 
-        <div className="text-sm text-gray-500 dark:text-gray-400">
+        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center items-center">
+          <button
+            onClick={handleLogin}
+            className="bg-blue-600 text-white px-5 py-2.5 sm:px-6 sm:py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors whitespace-nowrap"
+          >
+            登录账号
+          </button>
+          <button
+            onClick={handleRegister}
+            className="bg-green-600 text-white px-5 py-2.5 sm:px-6 sm:py-3 rounded-lg font-semibold hover:bg-green-700 transition-colors whitespace-nowrap"
+          >
+            注册新账号
+          </button>
+          <button
+            onClick={handleGuest}
+            className="bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-gray-200 px-5 py-2.5 sm:px-6 sm:py-3 rounded-lg font-semibold hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors whitespace-nowrap"
+          >
+            游客访问
+          </button>
+        </div>
+
+        <div className="text-sm text-gray-500 dark:text-gray-400 mt-8 text-center">
           <p>已有 1000+ 用户在这里提升了英语水平</p>
         </div>
       </div>
@@ -131,32 +131,28 @@ function LoginForm({ onBack }: { onBack: () => void }) {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
-      <div className="card p-8 w-full max-w-md">
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 sm:p-8 w-full max-w-md">
         <h2 className="text-2xl font-bold text-center mb-6">登录账号</h2>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium mb-1">
-              用户名
-            </label>
+            <label className="block text-sm font-medium mb-1">用户名</label>
             <input
               type="text"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              className="input focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
               required
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1">
-              密码
-            </label>
+            <label className="block text-sm font-medium mb-1">密码</label>
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="input focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
               required
             />
           </div>
@@ -168,7 +164,7 @@ function LoginForm({ onBack }: { onBack: () => void }) {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 disabled:opacity-50"
+            className="w-full bg-blue-600 text-white py-2.5 px-4 rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50 transition-colors"
           >
             {loading ? '登录中...' : '登录'}
           </button>
@@ -176,7 +172,7 @@ function LoginForm({ onBack }: { onBack: () => void }) {
 
         <button
           onClick={onBack}
-          className="w-full mt-4 text-gray-600 hover:text-gray-800"
+          className="w-full mt-4 text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200"
         >
           返回
         </button>
@@ -215,7 +211,6 @@ function RegisterForm({ onBack }: { onBack: () => void }) {
       const data = await response.json() as { success: boolean; data: { username: string; email: string; display_name: string }; error?: string };
 
       if (data.success) {
-        // 注册成功后自动登录
         const loginResponse = await fetch('/api/auth/login', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -242,61 +237,53 @@ function RegisterForm({ onBack }: { onBack: () => void }) {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
-      <div className="card p-8 w-full max-w-md">
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 sm:p-8 w-full max-w-md">
         <h2 className="text-2xl font-bold text-center mb-6">注册新账号</h2>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium mb-1">
-              用户名
-            </label>
+            <label className="block text-sm font-medium mb-1">用户名</label>
             <input
               type="text"
               name="username"
               value={formData.username}
               onChange={handleChange}
-              className="input focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
               required
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1">
-              邮箱
-            </label>
+            <label className="block text-sm font-medium mb-1">邮箱</label>
             <input
               type="email"
               name="email"
               value={formData.email}
               onChange={handleChange}
-              className="input focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
               required
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1">
-              显示名称
-            </label>
+            <label className="block text-sm font-medium mb-1">显示名称</label>
             <input
               type="text"
               name="display_name"
               value={formData.display_name}
               onChange={handleChange}
-              className="input focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1">
-              密码
-            </label>
+            <label className="block text-sm font-medium mb-1">密码</label>
             <input
               type="password"
               name="password"
               value={formData.password}
               onChange={handleChange}
-              className="input focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
               required
             />
           </div>
@@ -308,7 +295,7 @@ function RegisterForm({ onBack }: { onBack: () => void }) {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 disabled:opacity-50"
+            className="w-full bg-green-600 text-white py-2.5 px-4 rounded-lg font-semibold hover:bg-green-700 disabled:opacity-50 transition-colors"
           >
             {loading ? '注册中...' : '注册'}
           </button>
@@ -316,7 +303,7 @@ function RegisterForm({ onBack }: { onBack: () => void }) {
 
         <button
           onClick={onBack}
-          className="w-full mt-4 text-gray-600 hover:text-gray-800"
+          className="w-full mt-4 text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200"
         >
           返回
         </button>
