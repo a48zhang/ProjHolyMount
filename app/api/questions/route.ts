@@ -4,7 +4,7 @@ import type { AuthContext } from '@/lib/auth';
 import { withApiLogging } from '@/lib/logger';
 
 // 创建题目
-async function createQuestionWithContext(
+export async function createQuestionWithContext(
     ctx: AuthContext,
     body: { type: string; content_json: unknown; answer_key_json?: unknown; rubric_json?: unknown; schema_version?: number }
 ) {

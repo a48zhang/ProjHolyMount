@@ -3,7 +3,7 @@ import { getCloudflareContext } from '@opennextjs/cloudflare';
 import { withApiLogging } from '@/lib/logger';
 
 // 公开试卷详情（无需登录）。仅当考试已发布且 is_public=1 时返回
-async function getPublicExamWithEnv(env: any, examId: number) {
+export async function getPublicExamWithEnv(env: any, examId: number) {
     try {
         if (!Number.isFinite(examId)) return NextResponse.json({ success: false, error: '参数错误' }, { status: 400 });
         const exam = await env.DB

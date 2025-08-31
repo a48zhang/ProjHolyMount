@@ -43,7 +43,7 @@ function scoreObjective(question: Question, answer: unknown): number {
     }
 }
 
-async function submitWithContext(ctx: AuthContext, submissionId: number) {
+export async function submitWithContext(ctx: AuthContext, submissionId: number) {
     try {
         if (!Number.isFinite(submissionId)) return NextResponse.json({ success: false, error: '参数错误' }, { status: 400 });
 

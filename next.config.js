@@ -2,7 +2,7 @@ const nextConfig = {
   /* config options here */
 };
 
-module.exports = nextConfig;
+export default nextConfig;
 
 // added by create cloudflare to enable calling `getCloudflareContext()` in `next dev`
 // const { initOpenNextCloudflareForDev } = require('@opennextjs/cloudflare');
