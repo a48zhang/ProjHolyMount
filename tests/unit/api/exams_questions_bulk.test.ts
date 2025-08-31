@@ -1,5 +1,5 @@
 import test from 'tape';
-import * as mod from '../../../app/api/exams/[id]/questions/bulk/route';
+import { setExamQuestionsWithContext } from '../../../lib/exam-services';
 
 test('POST /api/exams/[id]/questions/bulk sets items and total points', async (t) => {
     t.plan(2);
@@ -19,7 +19,7 @@ test('POST /api/exams/[id]/questions/bulk sets items and total points', async (t
         }),
     };
     const ctx = { env: { DB: dbStub }, userId: 10, username: 't', email: 'x', role: 'teacher', plan: 'free', grade_level: null };
-    const res = await mod.setExamQuestionsWithContext(ctx as any, 1, [
+    const res = await setExamQuestionsWithContext(ctx as any, 1, [
         { question_id: 11, order_index: 1, points: 2 },
         { question_id: 12, order_index: 2, points: 3 },
     ]);

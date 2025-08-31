@@ -1,5 +1,5 @@
 import test from 'tape';
-import * as mod from '../../../app/api/exams/[id]/start/route';
+import { startExamWithContext } from '../../../lib/exam-services';
 
 test('POST /api/exams/[id]/start creates submission when none exists', async (t) => {
     t.plan(3);
@@ -37,7 +37,7 @@ test('POST /api/exams/[id]/start creates submission when none exists', async (t)
                 all: async <T>() => ({ results: [] as T[] }),
                 run: async () => {
                     calls.push({ sql, args });
-                    return { success: true };
+                    return { success: true, meta: { last_row_id: 100 } };
                 },
             }),
         }),
@@ -59,7 +59,7 @@ test('POST /api/exams/[id]/start creates submission when none exists', async (t)
         method: 'POST',
         headers: { Authorization: 'Bearer token' },
     });
-    const res: Response = await mod.startExamWithContext(ctx as any, 1);
+    const res: Response = await startExamWithContext(ctx as any, 1);
     t.equal(res.status, 200, 'should return 200');
     const json = await res.json();
     t.equal(json.success, true, 'success true');
@@ -96,7 +96,7 @@ test('POST /api/exams/[id]/start returns existing submission id', async (t) => {
 
 
     const req = new Request('https://example.com/api/exams/99/start', { method: 'POST', headers: { Authorization: 'Bearer token' } });
-    const res: Response = await mod.startExamWithContext(ctx as any, 99);
+    const res: Response = await startExamWithContext(ctx as any, 99);
     const json = await res.json();
     t.equal(res.status, 200, 'should return 200');
     t.equal(json.data.submission_id, 55, 'returns existing submission id');

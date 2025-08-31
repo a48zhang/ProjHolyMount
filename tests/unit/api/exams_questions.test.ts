@@ -1,5 +1,5 @@
 import test from 'tape';
-import * as mod from '../../../app/api/exams/[id]/questions/route';
+import { listExamQuestionsWithContext } from '../../../lib/exam-services';
 
 test('GET /api/exams/[id]/questions author listing', async (t) => {
     t.plan(2);
@@ -26,7 +26,7 @@ test('GET /api/exams/[id]/questions author listing', async (t) => {
         }),
     };
     const ctx = { env: { DB: dbStub }, userId: 10, username: 't', email: 'x', role: 'teacher', plan: 'free', grade_level: null };
-    const res = await mod.listExamQuestionsWithContext(ctx as any, 1);
+    const res = await listExamQuestionsWithContext(ctx as any, 1);
     t.equal(res.status, 200);
     const json = await res.json();
     t.equal(json.data.items.length, 1);

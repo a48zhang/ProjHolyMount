@@ -1,5 +1,5 @@
 import test from 'tape';
-import * as mod from '../../../app/api/submissions/[id]/answers/route';
+import { saveAnswersWithContext } from '../../../lib/exam-services';
 
 test('PUT /api/submissions/[id]/answers saves answers list', async (t) => {
     t.plan(2);
@@ -24,7 +24,7 @@ test('PUT /api/submissions/[id]/answers saves answers list', async (t) => {
     };
 
     const ctx = { env: { DB: dbStub }, userId: 42, username: 'u', email: 'e', role: 'student', plan: 'free', grade_level: null };
-    const res: Response = await mod.saveAnswersWithContext(
+    const res: Response = await saveAnswersWithContext(
         ctx as any,
         10,
         [{ exam_question_id: 7, answer_json: 'A' }, { exam_question_id: 8, answer_json: ['B', 'C'] }]

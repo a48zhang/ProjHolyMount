@@ -1,8 +1,5 @@
 import test from 'tape';
-import * as closeMod from '../../../app/api/exams/[id]/close/route';
-import * as assignMod from '../../../app/api/exams/[id]/assign/route';
-import * as detailMod from '../../../app/api/exams/[id]/route';
-import * as publicMod from '../../../app/api/public/exams/[id]/route';
+import { closeExamWithContext, assignExamWithContext, getExamDetailWithContext, getPublicExamWithEnv } from '../../../lib/exam-services';
 
 test('close exam by author', async (t) => {
     t.plan(1);
@@ -19,7 +16,7 @@ test('close exam by author', async (t) => {
         }),
     };
     const ctx = { env: { DB: dbStub }, userId: 10, username: 't', email: 'x', role: 'teacher', plan: 'free', grade_level: null };
-    const res = await closeMod.closeExamWithContext(ctx as any, 1);
+    const res = await closeExamWithContext(ctx as any, 1);
     t.equal(res.status, 200);
 });
 
@@ -39,7 +36,7 @@ test('assign exam to users by author', async (t) => {
         }),
     };
     const ctx = { env: { DB: dbStub }, userId: 10, username: 't', email: 'x', role: 'teacher', plan: 'free', grade_level: null };
-    const res = await assignMod.assignExamWithContext(ctx as any, 1, [101, 102], null);
+    const res = await assignExamWithContext(ctx as any, 1, [101, 102], null);
     t.equal(res.status, 200);
     const json = await res.json();
     t.equal(json.data.assigned, 2);
@@ -60,7 +57,7 @@ test('get exam detail by author or assigned student', async (t) => {
         })
     };
     const ctxAuthor = { env: { DB: dbStubAuthor }, userId: 10, username: 't', email: 'x', role: 'teacher', plan: 'free', grade_level: null };
-    const res1 = await detailMod.getExamDetailWithContext(ctxAuthor as any, 1);
+    const res1 = await getExamDetailWithContext(ctxAuthor as any, 1);
     t.equal(res1.status, 200);
 
     const dbStubStudent = {
@@ -76,7 +73,7 @@ test('get exam detail by author or assigned student', async (t) => {
         })
     };
     const ctxStudent = { env: { DB: dbStubStudent }, userId: 201, username: 's', email: 'x', role: 'student', plan: 'free', grade_level: null };
-    const res2 = await detailMod.getExamDetailWithContext(ctxStudent as any, 1);
+    const res2 = await getExamDetailWithContext(ctxStudent as any, 1);
     t.equal(res2.status, 200);
 });
 
@@ -99,7 +96,7 @@ test('public exam detail without auth', async (t) => {
             })
         })
     } as any;
-    const res = await publicMod.getPublicExamWithEnv({ DB: dbStub } as any, 1);
+    const res = await getPublicExamWithEnv({ DB: dbStub } as any, 1);
     t.equal(res.status, 200);
     const json = await res.json();
     t.equal(json.data.question_count, 3);

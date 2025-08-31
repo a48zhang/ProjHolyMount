@@ -1,46 +1,11 @@
 import { NextResponse } from 'next/server';
 import { getAuthContext, requireRole } from '@/lib/auth';
-import type { AuthContext } from '@/lib/auth';
 import { withApiLogging } from '@/lib/logger';
-
-// 创建题目
-export async function createQuestionWithContext(
-    ctx: AuthContext,
-    body: { type: string; content_json: unknown; answer_key_json?: unknown; rubric_json?: unknown; schema_version?: number }
-) {
-    try {
-        requireRole(ctx, ['teacher', 'admin']);
-        const { type, content_json, answer_key_json, rubric_json, schema_version = 1 } = body;
-        if (!type || !content_json) {
-            return NextResponse.json({ success: false, error: '缺少题型或内容' }, { status: 400 });
-        }
-        await ctx.env.DB
-            .prepare(
-                `INSERT INTO questions (author_id, type, schema_version, content_json, answer_key_json, rubric_json, is_active, created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?, 1, datetime('now'), datetime('now'))`
-            )
-            .bind(
-                ctx.userId,
-                type,
-                schema_version,
-                JSON.stringify(content_json),
-                answer_key_json ? JSON.stringify(answer_key_json) : null,
-                rubric_json ? JSON.stringify(rubric_json) : null
-            )
-            .run();
-        const created = await ctx.env.DB
-            .prepare('SELECT id FROM questions WHERE author_id = ? ORDER BY id DESC LIMIT 1')
-            .bind(ctx.userId)
-            .first<{ id: number }>();
-        return NextResponse.json({ success: true, data: { id: created?.id } });
-    } catch (error) {
-        console.error('创建题目错误:', error);
-        return NextResponse.json({ success: false, error: '服务器内部错误' }, { status: 500 });
-    }
-}
+import { createQuestionWithContext } from '@/lib/exam-services';
 
 export const POST = withApiLogging(async (request: Request) => {
     const ctx = await getAuthContext(request);
+    requireRole(ctx, ['teacher', 'admin']);
     const body = (await request.json()) as { type: string; content_json: unknown; answer_key_json?: unknown; rubric_json?: unknown; schema_version?: number };
     return createQuestionWithContext(ctx, body);
 });

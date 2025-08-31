@@ -1,5 +1,5 @@
 import test from 'tape';
-import * as mod from '../../../app/api/exams/[id]/paper/route';
+import { getExamPaperWithContext } from '../../../lib/exam-services';
 
 test('GET /api/exams/[id]/paper returns items (author view, include answers)', async (t) => {
     t.plan(3);
@@ -29,7 +29,7 @@ test('GET /api/exams/[id]/paper returns items (author view, include answers)', a
         }),
     };
     const ctx = { env: { DB: dbStub }, userId: 10, username: 't', email: 'x', role: 'teacher', plan: 'free', grade_level: null };
-    const res = await mod.getExamPaperWithContext(ctx as any, 1, true);
+    const res = await getExamPaperWithContext(ctx as any, 1, true);
     t.equal(res.status, 200);
     const json = await res.json();
     t.equal(json.success, true);

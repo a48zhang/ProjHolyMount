@@ -1,5 +1,5 @@
 import test from 'tape';
-import * as mod from '../../../app/api/submissions/[id]/submit/route';
+import { submitWithContext } from '../../../lib/exam-services';
 
 test('POST /api/submissions/[id]/submit calculates auto score and updates rows', async (t) => {
     t.plan(3);
@@ -42,10 +42,11 @@ test('POST /api/submissions/[id]/submit calculates auto score and updates rows',
     };
 
     const ctx = { env: { DB: dbStub }, userId: 10, username: 'u', email: 'e', role: 'student', plan: 'free', grade_level: null };
-    const res: Response = await mod.submitWithContext(ctx as any, 5);
+    const res: Response = await submitWithContext(ctx as any, 5);
     t.equal(res.status, 200, 'should return 200');
     const json = await res.json();
     t.equal(json.success, true, 'success true');
+    console.log('Actual score_auto:', json.data.score_auto);
     t.equal(json.data.score_auto, 5, 'auto score should be 5');
 });
 

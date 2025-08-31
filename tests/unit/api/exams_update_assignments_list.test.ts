@@ -1,6 +1,5 @@
 import test from 'tape';
-import * as examsMod from '../../../app/api/exams/[id]/route';
-import * as assignmentsMod from '../../../app/api/exams/[id]/assignments/route';
+import { updateExamWithContext, listAssignmentsWithContext } from '../../../lib/exam-services';
 
 test('PATCH /api/exams/[id] updates draft exam settings', async (t) => {
     t.plan(1);
@@ -20,7 +19,7 @@ test('PATCH /api/exams/[id] updates draft exam settings', async (t) => {
         }),
     };
     const ctx = { env: { DB: dbStub }, userId: 10, username: 't', email: 'x', role: 'teacher', plan: 'free', grade_level: null };
-    const res = await examsMod.updateExamWithContext(ctx as any, 1, { title: 'new', randomize: true, is_public: false });
+    const res = await updateExamWithContext(ctx as any, 1, { title: 'new', randomize: true, is_public: false });
     t.equal(res.status, 200);
 });
 
@@ -44,7 +43,7 @@ test('GET /api/exams/[id]/assignments lists assignments', async (t) => {
         })
     };
     const ctx = { env: { DB: dbStub }, userId: 10, username: 't', email: 'x', role: 'teacher', plan: 'free', grade_level: null };
-    const res = await assignmentsMod.listAssignmentsWithContext(ctx as any, 1);
+    const res = await listAssignmentsWithContext(ctx as any, 1);
     t.equal(res.status, 200);
     const json = await res.json();
     t.equal(json.data.assignments.length, 1);
