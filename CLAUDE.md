@@ -67,10 +67,15 @@ npm run typecheck             # Type checking
 # Run specific test file
 npm test -- tests/unit/api/exams_paper.test.ts
 npm test -- tests/unit/frontend/utils/validation.test.ts
+npm test -- tests/unit/lib/auth.test.ts
 
 # Run test category
 npm test -- tests/unit/api/          # All API tests
 npm test -- tests/unit/frontend/     # All frontend tests
+npm test -- tests/unit/lib/          # All library tests
+
+# Run specific test with debugging
+DEBUG=1 npm test -- tests/unit/api/exams_start.test.ts
 ```
 
 ## API Structure
@@ -96,6 +101,10 @@ All routes follow `/api/[resource]/[id]/[action]` pattern:
 - `POST /api/questions` - Create question
 - `PUT /api/questions/[id]` - Update question
 - `DELETE /api/questions/[id]` - Delete question
+
+**Practice**
+- `GET /api/practice/paper` - Get practice questions
+- `POST /api/practice/submit` - Submit practice answers
 
 **Submissions**
 - `POST /api/submissions/[id]/submit` - Submit answers
@@ -140,15 +149,23 @@ tests/                       # Test suite
 
 ### Test Categories
 - **Unit Tests**: 180+ test cases across 25 files
-- **API Tests**: Full CRUD testing for all endpoints
+- **API Tests**: Full CRUD testing for all endpoints with role-based access testing
 - **Frontend Tests**: Component rendering, utility functions
 - **Coverage**: 85%+ frontend, 90%+ backend
 
 ### Test Patterns
-- Use `tape` for assertions
-- Mock Cloudflare context with test database
-- Test both success and error paths
-- Boundary testing for all validation rules
+- Use `tape` for assertions with `tap-spec` for readable output
+- Mock Cloudflare context with test database using in-memory D1
+- Test both success and error paths including permission boundaries
+- Boundary testing for all validation rules and edge cases
+- Test role-based access patterns (student/teacher/admin)
+
+### Test Data Setup
+Tests automatically reset database state before each test run. Mock data includes:
+- Users with different roles (student/teacher/admin)
+- Exams in different states (draft/published/closed)
+- Questions with various types and schemas
+- Submissions with different statuses
 
 ### Running Tests
 ```bash
@@ -157,16 +174,28 @@ npm run typecheck && npm run lint && npm run test:unit
 
 # Before commit
 npm run ci  # Runs coverage + all tests
+
+# Debugging specific test
+DEBUG=1 npm test -- tests/unit/api/exams_start.test.ts
 ```
 
 ## Common Development Tasks
 
 ### Adding New API Endpoint
 1. Create route file in `app/api/[resource]/[action]/route.ts`
-2. Use `getAuthContext()` for authentication
-3. Add validation and error handling
-4. Write tests in `tests/unit/api/`
-5. Update frontend components if needed
+2. Use `getAuthContext()` for authentication and `requireRole()` for permissions
+3. Use `withApiLogging()` wrapper for automatic logging
+4. Add validation and error handling with proper HTTP status codes
+5. Write tests in `tests/unit/api/` following existing patterns
+6. Update frontend components if needed
+
+### Role-Based Access Patterns
+- **Public routes**: No authentication required (e.g., `/api/exams?list=public`)
+- **Student routes**: Use `requireRole(ctx, 'student')` or array for multiple roles
+- **Teacher routes**: Use `requireRole(ctx, 'teacher')` or `['teacher', 'admin']`
+- **Admin routes**: Use `requireRole(ctx, 'admin')`
+- **Author-only**: Use `requireExamAuthor(ctx, examId)` for exam-specific permissions
+- **Assignment-based**: Use `requireAssigned(ctx, examId)` for student exam access
 
 ### Database Changes
 1. Update `schema.sql` for schema changes
@@ -192,11 +221,22 @@ npm run db-reset
 
 # Start development server
 npm run dev
+
+# Access at http://localhost:3000
 ```
 
 ### Required Environment Variables
 - `JWT_SECRET` - JWT signing key (set in Cloudflare dashboard)
 - Database bindings configured in `wrangler.jsonc`
+
+### Development Database
+Local development uses Cloudflare D1's local binding. The database schema is automatically applied via `npm run db-reset` which runs `schema.sql` against the local D1 instance.
+
+### Environment Detection
+The application detects environment via:
+- Local: Uses `wrangler.jsonc` bindings
+- Production: Uses Cloudflare dashboard variables
+- Database: `DB` binding for D1 database access
 
 ## Deployment Notes
 

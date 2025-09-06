@@ -67,6 +67,15 @@ function AppNavContent() {
                     </Link>
                 ),
             },
+            {
+                key: 'questions',
+                icon: <BookOutlined />,
+                label: (
+                    <Link href="/questions" className="no-underline">
+                        题库
+                    </Link>
+                ),
+            },
         ];
 
         if (role === 'teacher' || role === 'admin') {
@@ -76,7 +85,7 @@ function AppNavContent() {
                     icon: <ProfileOutlined />,
                     label: (
                         <Link href="/teacher/exams" className="no-underline">
-                            试卷
+                            试卷管理
                         </Link>
                     ),
                 },
@@ -85,7 +94,7 @@ function AppNavContent() {
                     icon: <BookOutlined />,
                     label: (
                         <Link href="/teacher/questions" className="no-underline">
-                            题库
+                            题库管理
                         </Link>
                     ),
                 },
@@ -151,12 +160,15 @@ function AppNavContent() {
                 </div>
                 <Space align="center" size={12}>
                     {role ? (
-                        <Typography.Text type="secondary" className="hidden md:inline">
-                            角色：{roleLabel[role]}
-                        </Typography.Text>
-                    ) : null}
-                    <ThemeToggle />
-                    <Button type="text" onClick={logout} icon={<LogoutOutlined />}>退出</Button>
+                        <>
+                            <Typography.Text type="secondary" className="hidden md:inline">
+                                角色：{roleLabel[role]}
+                            </Typography.Text>
+                            <Button type="text" onClick={logout} icon={<LogoutOutlined />}>退出</Button>
+                        </>
+                    ) : (
+                        <ThemeToggle />
+                    )}
                 </Space>
             </div>
 
@@ -175,9 +187,11 @@ function AppNavContent() {
                     onClick={() => setMobileOpen(false)}
                     style={{ borderInlineEnd: 'none' }}
                 />
-                <div style={{ padding: 12 }}>
-                    <Button block onClick={logout} icon={<LogoutOutlined />}>退出</Button>
-                </div>
+                {role && (
+                    <div style={{ padding: 12 }}>
+                        <Button block onClick={logout} icon={<LogoutOutlined />}>退出</Button>
+                    </div>
+                )}
             </Drawer>
         </Layout.Header>
     );

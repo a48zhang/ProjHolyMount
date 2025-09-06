@@ -10,17 +10,56 @@ export const POST = withApiLogging(async (request: Request) => {
     return createQuestionWithContext(ctx, body);
 });
 
-// 列表题目（仅作者可见自己的题，admin 可见全部）
+// 列表题目（支持公开题库查询）
 export const GET = withApiLogging(async (request: Request) => {
     try {
         const ctx = await getAuthContext(request);
-        requireRole(ctx, ['teacher', 'admin']);
-
         const { searchParams } = new URL(request.url);
+        const publicOnly = searchParams.get('public') === 'true';
         const limit = Math.min(parseInt(searchParams.get('limit') || '20', 10), 100);
         const offset = Math.max(parseInt(searchParams.get('offset') || '0', 10), 0);
         const type = searchParams.get('type');
         const includeContent = searchParams.get('includeContent') === 'true';
+
+        // 如果要求公开题库，允许所有用户访问
+        if (publicOnly) {
+            const selectCols = includeContent
+                ? `q.id, q.type, q.schema_version, q.is_active, q.created_at, q.content_json, u.username as author_name`
+                : `q.id, q.type, q.schema_version, q.is_active, q.created_at, u.username as author_name`;
+            
+            let sql = `SELECT ${selectCols} FROM questions q 
+                      JOIN users u ON q.author_id = u.id 
+                      WHERE q.is_active = 1`;
+            const binds: (string | number)[] = [];
+
+            if (type) {
+                sql += ` AND q.type = ?`;
+                binds.push(type);
+            }
+
+            sql += ` ORDER BY q.id DESC LIMIT ? OFFSET ?`;
+            binds.push(limit, offset);
+
+            interface QuestionRow {
+                id: number;
+                type: string;
+                schema_version: number;
+                is_active: number;
+                created_at: string;
+                content_json?: string;
+                author_name?: string;
+            }
+
+            const rows = await ctx.env.DB.prepare(sql).bind(...binds).all<QuestionRow>();
+            const results = (rows.results || []).map((r) => ({
+                ...r,
+                ...(includeContent ? { content_json: r.content_json ? JSON.parse(r.content_json) : null } : {}),
+            }));
+            return NextResponse.json({ success: true, data: results });
+        }
+
+        // 原有的权限控制逻辑
+        requireRole(ctx, ['teacher', 'admin']);
 
         const selectCols = includeContent
             ? `id, author_id, type, schema_version, is_active, created_at, updated_at, content_json`
