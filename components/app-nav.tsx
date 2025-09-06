@@ -5,16 +5,26 @@ import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { ThemeToggle } from '@/components/theme-toggle';
-import { Layout, Menu, Button, Drawer, Grid, Space, Typography } from 'antd';
+import { Layout, Menu, Button, Drawer, Grid, Space, Typography, Dropdown, Avatar } from 'antd';
 import type { MenuProps } from 'antd';
-import { MenuOutlined, ReadOutlined, ProfileOutlined, BookOutlined, LogoutOutlined } from '@ant-design/icons';
+import { MenuOutlined, ReadOutlined, ProfileOutlined, BookOutlined, LogoutOutlined, UserOutlined, SettingOutlined } from '@ant-design/icons';
 
 type Role = 'student' | 'teacher' | 'admin';
+
+interface UserInfo {
+    id: number;
+    username: string;
+    display_name: string;
+    avatar_url?: string;
+    role: Role;
+    email: string;
+}
 
 function AppNavContent() {
     const pathname = usePathname();
     const searchParams = useSearchParams();
     const router = useRouter();
+    const [user, setUser] = useState<UserInfo | null>(null);
     const [role, setRole] = useState<Role | null>(null);
     const [mobileOpen, setMobileOpen] = useState(false);
     const screens = Grid.useBreakpoint();
@@ -24,12 +34,19 @@ function AppNavContent() {
         if (!token) return;
         fetch('/api/auth/me', { headers: { Authorization: `Bearer ${token}` } })
             .then(r => r.json() as Promise<any>)
-            .then(res => { if (res?.success) setRole(res.data.role as Role); })
+            .then(res => { 
+                if (res?.success) {
+                    setUser(res.data);
+                    setRole(res.data.role as Role);
+                }
+            })
             .catch(() => { });
     }, []);
 
     const logout = () => {
         localStorage.removeItem('token');
+        setUser(null);
+        setRole(null);
         router.push('/');
     };
 
@@ -115,6 +132,38 @@ function AppNavContent() {
     }, [role]);
 
     const roleLabel: Record<Role, string> = { student: '学生', teacher: '老师', admin: '管理员' };
+    
+    const userMenuItems: MenuProps['items'] = [
+        {
+            key: 'profile',
+            icon: <UserOutlined />,
+            label: (
+                <Link href="/me/profile" className="no-underline">
+                    个人中心
+                </Link>
+            ),
+        },
+        {
+            key: 'role',
+            icon: <SettingOutlined />,
+            label: (
+                <span>
+                    角色：{user && roleLabel[user.role]}
+                </span>
+            ),
+            disabled: true,
+        },
+        {
+            type: 'divider',
+        },
+        {
+            key: 'logout',
+            icon: <LogoutOutlined />,
+            label: '退出登录',
+            onClick: logout,
+        },
+    ];
+
     return (
         <Layout.Header
             style={{
@@ -159,15 +208,34 @@ function AppNavContent() {
                     )}
                 </div>
                 <Space align="center" size={12}>
-                    {role ? (
-                        <>
-                            <Typography.Text type="secondary" className="hidden md:inline">
-                                角色：{roleLabel[role]}
-                            </Typography.Text>
-                            <Button type="text" onClick={logout} icon={<LogoutOutlined />}>退出</Button>
-                        </>
+                    {user ? (
+                        <Dropdown
+                            menu={{ items: userMenuItems }}
+                            placement="bottomRight"
+                            trigger={['hover']}
+                            overlayStyle={{ minWidth: 180 }}
+                        >
+                            <div style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8 }}>
+                                <Avatar 
+                                    size="small" 
+                                    src={user.avatar_url} 
+                                    icon={!user.avatar_url && <UserOutlined />}
+                                />
+                                <Typography.Text className="hidden md:inline">
+                                    {user.display_name || user.username}
+                                </Typography.Text>
+                            </div>
+                        </Dropdown>
                     ) : (
-                        <ThemeToggle />
+                        <Space>
+                            <Link href="/login" className="no-underline">
+                                <Button type="text">登录</Button>
+                            </Link>
+                            <Link href="/register" className="no-underline">
+                                <Button type="primary">注册</Button>
+                            </Link>
+                            <ThemeToggle />
+                        </Space>
                     )}
                 </Space>
             </div>
@@ -180,6 +248,24 @@ function AppNavContent() {
                 onClose={() => setMobileOpen(false)}
                 bodyStyle={{ padding: 0 }}
             >
+                {user && (
+                    <div style={{ padding: 16, borderBottom: '1px solid var(--color-border)' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                            <Avatar 
+                                size="large" 
+                                src={user.avatar_url} 
+                                icon={!user.avatar_url && <UserOutlined />}
+                            />
+                            <div>
+                                <Typography.Text strong>{user.display_name || user.username}</Typography.Text>
+                                <br />
+                                <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+                                    角色：{roleLabel[user.role]}
+                                </Typography.Text>
+                            </div>
+                        </div>
+                    </div>
+                )}
                 <Menu
                     mode="inline"
                     selectedKeys={selectedKey ? [selectedKey] : []}
@@ -187,9 +273,27 @@ function AppNavContent() {
                     onClick={() => setMobileOpen(false)}
                     style={{ borderInlineEnd: 'none' }}
                 />
-                {role && (
-                    <div style={{ padding: 12 }}>
-                        <Button block onClick={logout} icon={<LogoutOutlined />}>退出</Button>
+                {user ? (
+                    <div style={{ padding: 12, borderTop: '1px solid var(--color-border)' }}>
+                        <Link href="/me/profile" className="no-underline">
+                            <Button block icon={<UserOutlined />} style={{ marginBottom: 8 }}>
+                                个人中心
+                            </Button>
+                        </Link>
+                        <Button block danger onClick={logout} icon={<LogoutOutlined />}>
+                            退出登录
+                        </Button>
+                    </div>
+                ) : (
+                    <div style={{ padding: 12, borderTop: '1px solid var(--color-border)' }}>
+                        <Link href="/login" className="no-underline">
+                            <Button block type="primary" style={{ marginBottom: 8 }}>
+                                登录
+                            </Button>
+                        </Link>
+                        <Link href="/register" className="no-underline">
+                            <Button block>注册</Button>
+                        </Link>
                     </div>
                 )}
             </Drawer>

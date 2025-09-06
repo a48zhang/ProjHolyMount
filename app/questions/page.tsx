@@ -10,6 +10,26 @@ import { fetchJson } from '@/lib/http';
 
 const { Title, Text, Paragraph } = Typography;
 
+interface ApiResponse<T = any> {
+  success: boolean;
+  data: T;
+  error?: string;
+}
+
+interface UserInfo {
+  id: number;
+  username: string;
+  email: string;
+  display_name: string;
+  avatar_url: string | null;
+  level: number;
+  points: number;
+  created_at: string;
+  role: string;
+  plan: string;
+  grade_level: string | null;
+}
+
 interface Question {
   id: number;
   type: string;
@@ -33,10 +53,10 @@ export default function QuestionBankPage() {
     }
 
     // 获取用户角色
-    fetchJson('/api/auth/me', {
+    fetchJson<ApiResponse<UserInfo>>('/api/auth/me', {
       headers: { Authorization: `Bearer ${token}` }
     }).then(res => {
-      if (res?.success) {
+      if (res.success) {
         setRole(res.data.role);
         if (res.data.role === 'teacher' || res.data.role === 'admin') {
           // 教师和管理员跳转到题库管理
@@ -55,7 +75,7 @@ export default function QuestionBankPage() {
 
     try {
       setLoading(true);
-      const data = await fetchJson('/api/questions?public=true');
+      const data = await fetchJson<ApiResponse<Question[]>>('/api/questions?public=true');
       if (data.success) {
         setQuestions(data.data || []);
       }
@@ -151,8 +171,8 @@ export default function QuestionBankPage() {
                   }
                   description={
                     <div className="space-y-2">
-                      <Text className="block" ellipsis={{ rows: 2 }}>
-                        {content.question || content.prompt}
+                      <Text className="block">
+                        <span className="line-clamp-2">{content.question || content.prompt}</span>
                       </Text>
                       <Text type="secondary" className="text-xs">
                         添加时间: {new Date(question.created_at).toLocaleDateString()}
